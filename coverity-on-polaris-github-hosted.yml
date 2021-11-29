@@ -1,0 +1,75 @@
+name: Coverity on Polaris with Self-Hosted Runner
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      POLARIS_URL: ${{ secrets.POLARIS_URL }}
+      POLARIS_ACCESS_TOKEN: ${{ secrets.POLARIS_ACCESS_TOKEN }}
+      SECURITY_GATE_ARGS: --new
+      SYNOPSYS_GITHUB_TOOLS_REPO: https://github.com/synopsys-sig-community/synopsys-github-tools
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Download and configure Polaris CLI
+        run: |
+          curl -LsS -o polaris.zip $POLARIS_URL/api/tools/polaris_cli-linux64.zip
+          unzip -j -d polaris-cli polaris.zip
+          export CI_COMMIT_REF_NAME=$GITHUB_REF
+          ./polaris-cli/polaris --persist-config --co capture.build.buildCommands="null" --co capture.build.cleanCommands="null" --co capture.fileSystem="null" --co capture.coverity.autoCapture="enable" --co serverUrl=$POLARIS_URL configure
+
+      - name: Coverity Scan (Full analysis)
+        if: ${{github.event_name == 'push'}}
+        run: ./polaris-cli/polaris analyze -w
+
+      - id: changeset
+        if: ${{ github.event_name == 'pull_request' }}
+        name: Get Pull Request Changeset
+        uses: jitterbit/get-changed-files@v1
+        with:
+          format: json
+
+      - name: Coverity Scan (Incremental)
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          echo ${{ steps.changeset.outputs.added_modified }}
+          readarray -t changed_files <<<"$(jq -r '.[]' <<<'${{ steps.changeset.outputs.added_modified }}')"
+          for changed_file in ${changed_files[@]}; do
+            echo ${changed_file} >> polaris-files-to-scan.txt
+            echo "Scan changed file ${changed_file}."
+          done
+          export POLARIS_FF_ENABLE_COVERITY_INCREMENTAL=true
+          export CI_COMMIT_REF_NAME=$GITHUB_REF
+          ./polaris-cli/polaris analyze -w --incremental polaris-files-to-scan.txt
+
+      - name: Get Synopsys GitHub Tools
+        run: |
+          git clone -q --depth 1 $SYNOPSYS_GITHUB_TOOLS_REPO
+          pip3 install --upgrade pandas requests==2.26.0 urllib3==1.26.7 jsonapi-requests==0.6.2 tenacity==6.2.0 pygithub
+
+      - name: Export Coverity Results to SARIF (Full)
+        run: python3 ./synopsys-github-tools/github-export-polaris-issues.py --debug 9
+        if: ${{github.event_name == 'push'}}
+
+      - name: Export Coverity Results to SARIF (Incremental)
+        run: python3 ./synopsys-github-tools/github-export-coverity-issues.py --coverity-json ./.synopsys/polaris/data/coverity/*/idir/incremental-results/incremental-results.json --polaris --comment-on-github-pr --debug 9
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: ${{github.event_name == 'pull_request'}}
+        continue-on-error: true
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          # Path to SARIF file relative to the root of the repository
+          sarif_file: synopsys-coverity-github-sarif.json
