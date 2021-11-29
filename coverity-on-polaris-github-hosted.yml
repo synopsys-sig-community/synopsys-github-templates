@@ -58,11 +58,11 @@ jobs:
           pip3 install --upgrade pandas requests==2.26.0 urllib3==1.26.7 jsonapi-requests==0.6.2 tenacity==6.2.0 pygithub
 
       - name: Export Coverity Results to SARIF (Full)
-        run: python3 ./synopsys-github-tools/github-export-polaris-issues.py --debug 9
+        run: python3 ./synopsys-github-tools/github-export-polaris-issues.py
         if: ${{github.event_name == 'push'}}
 
       - name: Export Coverity Results to SARIF (Incremental)
-        run: python3 ./synopsys-github-tools/github-export-coverity-issues.py --coverity-json ./.synopsys/polaris/data/coverity/*/idir/incremental-results/incremental-results.json --polaris --comment-on-github-pr --debug 9
+        run: python3 ./synopsys-github-tools/github-export-coverity-issues.py --coverity-json ./.synopsys/polaris/data/coverity/*/idir/incremental-results/incremental-results.json --polaris --comment-on-github-pr
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: ${{github.event_name == 'pull_request'}}
