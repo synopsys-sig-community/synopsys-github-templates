@@ -72,8 +72,8 @@ docker run --name coverity-on-polaris-runner \
      -e GITHUB_OWNER=[username or organization] \
      -e GITHUB_REPOSITORY=[repository name] \
      -e GITHUB_PAT=[GitHub Personal Access Token] \
-     -e POLARIS_URL=[Your individual customer Polaris URL] \
-     -e POLARIS_ACCESS_TOKEN=[Your Polaris Access Token] \
+     -e POLARIS_URL=[Your individual customer Polaris URL - this will ONLY be used for initialzation] \
+     -e POLARIS_ACCESS_TOKEN=[Your Polaris Access Token - this will ONLY be used for initialzation] \
      coverity-on-polaris-runner
 ```
 
@@ -83,8 +83,8 @@ To use the runner organization-wide, leave out the repository:
 docker run --name coverity-on-polaris-runner \
      -e GITHUB_OWNER=[username or organization] \
      -e GITHUB_PAT=[GitHub Personal Access Token] \
-     -e POLARIS_URL=[Your individual customer Polaris URL] \
-     -e POLARIS_ACCESS_TOKEN=[Your Polaris Access Token] \
+     -e POLARIS_URL=[Your individual customer Polaris URL - this will ONLY be used for initialzation] \
+     -e POLARIS_ACCESS_TOKEN=[Your Polaris Access Token - this will ONLY be used for initialzation] \
      coverity-on-polaris-runner
 ```
 
