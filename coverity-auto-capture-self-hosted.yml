@@ -1,80 +1,114 @@
 name: Coverity
 
 on:
+  # Run Coverity on pushes to main branches, and pull requests that are going
+  # to be merged to main branches.
+
   push:
     branches: [ master ]
-    paths-ignore: [ '**.yml' ]
   pull_request:
     branches: [ master ]
-    paths-ignore: [ '**.yml' ]
+
+  # Allow ad-hoc, manual invocations of the Coverity workflow.
 
   workflow_dispatch:
 
 jobs:
   build:
+    # For Coverity with a full local analysis, not using the Kubernetes-based
+    # Coverity Scan Service, it is recommended to run using a self-hosted
+    # runner. This is primarily due to the large footprint of the standard
+    # Coverity installation.
+    #
+    # An example of configuring a Docker-based github-runner can be found here:
+    # https://github.com/synopsys-sig-community/synopsys-github-templates/tree/main/docker/coverity-auto-capture-runner
+
     runs-on: [self-hosted]
 
     env:
       # The following variables must be configured in your GitHub project or
       # organization settings:
+      #
       #   COVERITY_URL: URL to Coverity Connect
       #   COVERITY_USER: Username to authenticate to Coverity Connect
       #   COVERITY_LICENSE: The text contents of your license.dat that will be
-      #     passed to the Coverity analysis software.
+      #     passed to the Coverity analysis software. By configuring the
+      #     license in this way your github-runner can be limited to just the
+      #     software. Alternatively, you can pre-install the license in your
+      #     github-runner instance.
+
       COVERITY_URL: ${{ secrets.COVERITY_URL }}
       COV_USER: ${{ secrets.COVERITY_USER }}
       COVERITY_PASSPHRASE: ${{ secrets.COVERITY_PASSPHRASE }}
       COVERITY_LICENSE: ${{ secrets.COVERITY_LICENSE }}
+
       # Some Coverity command line utilities are not found in the bin
       # directory. Configure the COVERITY_HOME here:
       # Note: currently set to JBC VM
+
       COVERITY_HOME: /home/runner/cov-analysis-linux64
+
       # The SECURITY_GATE_VIEW must be configured in Coverity Connect
-      # to include the filter criteria for failing a build.
+      # to include the filter criteria for failing a build. Set the filter
+      # criteria to match your security policy. E.g., anything that matches
+      # the view filter criteria will cause a security gate policy failure.
+
       SECURITY_GATE_VIEW: OWASP Web Top 10
+
       # The COVERITY_CHECKERS specifies what analysis options are passed
       # to the Coverity analysis software.
+
       COVERITY_CHECKERS: --webapp-security
-      # The SYNOPSYS_GITHUB_TOOLS_REPO specifies the repository from which
-      # to download the supportive Python scripts for this configuration.
-      SYNOPSYS_GITHUB_TOOLS_REPO: https://github.com/synopsys-sig-community/synopsys-github-tools
 
     steps:
       # First check out the code. Note this is a shallow checkout, for the
       # version of code being built.
+
       - uses: actions/checkout@v2
 
-      # Fetch scripts for automating GitHub tasks from another repository.
-      # Also set up necessary Python dependencies.
-      - name: Get Synopsys GitHub Tools
-        run: |
-          git clone -q --depth 1 $SYNOPSYS_GITHUB_TOOLS_REPO
-          pip3 install --upgrade pandas requests==2.26.0 urllib3==1.26.7 jsonapi-requests==0.6.2 tenacity==6.2.0 pygithub suds
+      # Initialize a status check to Pending using the third party
+      # commit-status-updater action.
 
-      # Save the Coverity license from a GitHub Secret to a file in order to pass to the Coverity tools
+      - uses: ouzi-dev/commit-status-updater@v1.1.0
+        with:
+          name: "Coverity Policy Check"
+
+
+      # Save the Coverity license from a GitHub Secret to a file in order
+      # to pass to the Coverity tools
+
       - name: Coverity License
         run: |
           echo $COVERITY_LICENSE > coverity-license.dat
 
       # Create streams and projects in Coverity Connect if they do not
-      # already exist. This requires that the user credentials used has
-      # permission to create streams.
+      # already exist. This allows your workflow to be neutral and not contain
+      # any project specific details, which in turn can allow you to on-
+      # board new projects simply by installing this template.
       #
-      # The stream name is based on the repo name (not including the owner
-      # or organization) with the branch name appended.
+      # The project name will be derived from the repository name, e.g.:
+      #     project-name
+      # The stream name will be derived from the repository name AND the
+      # branch name. e.g.:
+      #     project-name-branch-name
+      #
+      # This requires that the user credentials used has permission to create
+      # streams.
       #
       # A project is necessary for the security gate to work, as it must
       # reference a project when opening the saved view.
+
       - name: Create Coverity Stream
         if: ${{github.event_name == 'push'}}
-        # TODO: Should this only run for master, other specific names?
         run: |
           env
           export COVERITY_STREAM_NAME=${GITHUB_REPOSITORY##*/}-${GITHUB_REF##*/}
+          export COVERITY_PROJECT_NAME=${GITHUB_REPOSITORY##*/}
+          echo Ensure that project "$COVERITY_PROJECT_NAME" exists
+          cov-manage-im --url $COVERITY_URL --on-new-cert trust --mode projects --add --set name:"$COVERITY_PROJECT_NAME" || true
           echo Ensure that stream "$COVERITY_STREAM_NAME" exists
-          cov-manage-im --url $COVERITY_URL --on-new-cert trust --mode projects --add --set name:"$COVERITY_STREAM_NAME" || true
           cov-manage-im --url $COVERITY_URL --on-new-cert trust --mode streams --add -set name:"$COVERITY_STREAM_NAME" || true
-          cov-manage-im --url $COVERITY_URL --on-new-cert trust --mode projects --update --name "$COVERITY_STREAM_NAME" --insert stream:"$COVERITY_STREAM_NAME"
+          cov-manage-im --url $COVERITY_URL --on-new-cert trust --mode projects --update --name "$COVERITY_PROJECT_NAME" --insert stream:"$COVERITY_STREAM_NAME"
 
       # On pushes to a main branch, run a Full Coverity analysis using auto
       # capture. This will scan the filesystem to determine what kind of
@@ -85,41 +119,41 @@ jobs:
       #
       # Results will be saved into coverity-full-results.json for
       # potential processing.
+
       - name: Coverity Scan (Full analysis)
         if: ${{github.event_name == 'push'}}
         run: |
           export COVERITY_STREAM_NAME=${GITHUB_REPOSITORY##*/}-${GITHUB_REF##*/}
           cov-capture --dir idir --project-dir .
           cov-analyze --dir idir --strip-path `pwd` --security-file coverity-license.dat $COVERITY_CHECKERS
-          $COVERITY_HOME/sigma/bin/sigma analyze
           cov-commit-defects --dir idir --security-file coverity-license.dat --ticker-mode none --url $COVERITY_URL --on-new-cert trust --stream $COVERITY_STREAM_NAME --scm git --description "GitHub Workflow $GITHUB_WORKFLOW for $GITHUB_REPO" --version $GITHUB_SHA
-          cov-format-errors --dir idir --security-file coverity-license.dat --json-output-v8 coverity-full-results.json
+          cov-format-errors --dir idir --security-file coverity-license.dat --json-output-v7 coverity-results.json
 
-      # Generate SARIF using Coverity's built-in tool. Note that this is not
-      # included in the regular Coverity PATH, so the full path must be
-      # specified here.
-      - name: Export Coverity Results to SARIF (Full)
-        run: |
-          node $COVERITY_HOME/SARIF/cov-format-sarif-for-github.js \
-            --inputFile coverity-full-results.json \
-            --repoName $GITHUB_REPOSITORY \
-            --checkoutPath $GITHUB_REPOSITORY `pwd` $GITHUB_SHA \
-            --outputFile synopsys-coverity-github-sarif.json
-        if: ${{github.event_name == 'push'}}
+      # Use the helpful third party Jitterbit Get Changed Files action to
+      # determine what files have been added or modified.
 
-      # Use the helpful Jitterbit Get Changed Files action to determine
-      # what files have been added or modified.
       - name: Get Pull Request Changeset
         if: ${{ github.event_name == 'pull_request' }}
         id: changeset
         uses: jitterbit/get-changed-files@v1
+        continue-on-error: true
 
       # On a pull request, run an incremental analysis. This uses auto
       # capture as well, and references a stream that was presumably
       # created in advance by a push to this repo, using the stream name
       # based on the repository and main branch name (e.g. "master").
       #
-      # Results are saved into coverity-incremental-results.json.
+      # This implementation uses a full capture rather than a partial
+      # capure, as the partial capture will cause increased variability
+      # in the Coverity results compared to full analysis.
+      #
+      # If maximum speed is desired in favor of complete resulsts, you may
+      # add:
+      #     --source-list coverity-files-to-scan.txt
+      # to the cov-capture invokation.
+      #
+      # Results are saved into coverity-results.json.
+
       - name: Coverity Scan (Incremental analysis)
         if: ${{github.event_name == 'pull_request'}}
         run: |
@@ -129,53 +163,97 @@ jobs:
             echo "Scan changed file ${changed_file}."
           done
           cov-capture --dir idir --project-dir .
-          cov-run-desktop --dir idir --security-file coverity-license.dat --strip-path `pwd` --url $COVERITY_URL --stream $COVERITY_STREAM_NAME --present-in-reference false \
+          cov-run-desktop --dir idir --strip-path `pwd` --url $COVERITY_URL --stream $COVERITY_STREAM_NAME --present-in-reference false \
             --ignore-uncapturable-inputs true \
-            --json-output-v7 coverity-incremental-results.json \
-            $COVERITY_CHECKERS \
+            --security-file coverity-license.dat \
+            --json-output-v7 coverity-results.json \
             ${{ steps.changeset.outputs.added_modified }}
-          $COVERITY_HOME/sigma/bin/sigma analyze
         env:
           BASE_BRANCH: ${{ github.base_ref }}
 
-      - name: Coverity SARIF Generation (Incremental analysis)
+      # The coverity-report-output-v7-json action will take the results
+      # from Coverity and present them as review feedback on pull request.
+      #
+      # Only NEW defects will be reported to the user.
+
+      - name: Coverity Pull Request Feedback
         if: ${{github.event_name == 'pull_request'}}
+        uses: synopsys-sig/coverity-report-output-v7-json@v0.0.1
+        with:
+          # The following parameters are REQUIRED
+          json-file-path: ./coverity-results.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # If the following optional parameters are specified, the results from the JSON output will be
+          # compared to the baseline issues in the specified project, and only NEW issues will be reported
+          # in the pull request.
+          coverity-url: ${{ secrets.COVERITY_URL }}
+          coverity-project-name: ${{ github.event.repository.name }}
+          coverity-username: ${{ secrets.COVERITY_USER }}
+          coverity-password: ${{ secrets.COVERITY_PASSPHRASE }}
+
+      # Generate SARIF using Coverity's built-in tool. Note that this is not
+      # included in the regular Coverity PATH, so the full path must be
+      # specified here.
+      #
+      # This can be used for both pushes and pull requests, but note the
+      # GitHub limitation that it is only available for public repos and for
+      # if you have a subscription to GitHub Security.
+
+      - name: Export Coverity Results to SARIF
         run: |
           node $COVERITY_HOME/SARIF/cov-format-sarif-for-github.js \
-            --inputFile coverity-incremental-results.json \
+            --inputFile coverity-results.json \
             --repoName $GITHUB_REPOSITORY \
             --checkoutPath $GITHUB_REPOSITORY `pwd` $GITHUB_SHA \
             --outputFile synopsys-coverity-github-sarif.json
 
-      - name: Comment on pull request (Incremental)
-        run: |
-          export COVERITY_STREAM_NAME=${GITHUB_REPOSITORY##*/}-$BASE_BRANCH
-          # This will fetch the entire history - which may be impactful on performance.
-          # This is necessary in order to 'git blame' and determine which commits are
-          # associated with which files and lines changed.
-          git fetch --unshallow
-          python3 ./synopsys-github-tools/github-coverity-comment-on-pull-request.py \
-            --coverity-json coverity-incremental-results.json \
-            --url $COVERITY_URL \
-            --stream $COVERITY_STREAM_NAME \
-            --debug 9 \
-            --sigma-json ./sigma-results.json
-        if: ${{github.event_name == 'pull_request'}}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BASE_BRANCH: ${{ github.base_ref }}
+      - name: Upload SARIF file
+        if: ${{github.event_name == 'push'}}
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          # Path to SARIF file relative to the root of the repository
+          sarif_file: synopsys-coverity-github-sarif.json
 
-      #- name: Upload SARIF file
-      #  uses: github/codeql-action/upload-sarif@v1
-      #  with:
-      #    # Path to SARIF file relative to the root of the repository
-      #    sarif_file: synopsys-coverity-github-sarif.json
+      # Finally, implement a security gate. Use a pre-configured Coverity
+      # Connect saved view whose name is stored in $SECURITY_GATE_VIEW to
+      # check for any open security violations, and if present, use the third
+      # party commit-status-updater to set the Coverity Policy Check status
+      # to "failure." If no violations, set it to "success."
 
-      - name: Coverity Security Gate
+      - name: Coverity Security Gate (Full analysis)
         if: ${{github.event_name == 'push'}}
         run: |
           COVERITY_STREAM_NAME=${GITHUB_REPOSITORY##*/}-${GITHUB_REF##*/}
           COVERITY_VIEW_ESCAPED=`jq -rn --arg x "$SECURITY_GATE_VIEW" '$x|@uri'`
           curl -kfLsS --user $COV_USER:$COVERITY_PASSPHRASE $COVERITY_URL/api/viewContents/issues/v1/$COVERITY_VIEW_ESCAPED?projectId=$COVERITY_STREAM_NAME > security-gate-results.json
-          if [ $(cat security-gate-results.json | jq .viewContentsV1.totalRows) -ne 0 ]; then cat security-gate-results.json | jq .viewContentsV1.rows; exit 1; fi
+          if [ $(cat security-gate-results.json | jq .viewContentsV1.totalRows) -ne 0 ]; then
+            echo Security gate found policy violations
+            cat security-gate-results.json | jq .viewContentsV1.rows
+            echo "SECURITY_GATE_STATUS=failure" >> $GITHUB_ENV
+          else
+            echo "SECURITY_GATE_STATUS=success" >> $GITHUB_ENV
+          fi
 
+      # For a pull request, until the GitHub action supports this, we
+      # will run a preview commit and check how many newly introduced
+      # issues are being reported.
+
+      - name: Coverity Security Gate (Incremental analysis)
+        if: ${{github.event_name == 'pull_request'}}
+        run: |
+          export COVERITY_STREAM_NAME=${GITHUB_REPOSITORY##*/}-$BASE_BRANCH
+          echo RUN cov-commit-defects --dir idir --security-file coverity-license.dat --url ${COVERITY_URL} --preview-report-v2 preview-report.json --stream ${COVERITY_STREAM_NAME}
+          cov-commit-defects --dir idir --security-file coverity-license.dat --url ${COVERITY_URL} --preview-report-v2 preview-report.json --stream ${COVERITY_STREAM_NAME}
+          NUM_NEW_DEFECTS=`cat preview-report.json | jq -re .issueInfo[].presentInComparisonSnapshot | grep false | wc -l`
+          if [ ${NUM_NEW_DEFECTS} -gt 0 ]; then
+            echo "SECURITY_GATE_STATUS=failure" >> $GITHUB_ENV
+          else
+            echo "SECURITY_GATE_STATUS=success" >> $GITHUB_ENV
+          fi
+        env:
+          BASE_BRANCH: ${{ github.base_ref }}
+
+      - uses: ouzi-dev/commit-status-updater@v1.1.0
+        with:
+          name: "Coverity Policy Check"
+          status: "${{ env.SECURITY_GATE_STATUS }}"
