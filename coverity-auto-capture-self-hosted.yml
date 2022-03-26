@@ -242,7 +242,6 @@ jobs:
         if: ${{github.event_name == 'pull_request'}}
         run: |
           export COVERITY_STREAM_NAME=${GITHUB_REPOSITORY##*/}-$BASE_BRANCH
-          echo RUN cov-commit-defects --dir idir --security-file coverity-license.dat --url ${COVERITY_URL} --preview-report-v2 preview-report.json --stream ${COVERITY_STREAM_NAME}
           cov-commit-defects --dir idir --security-file coverity-license.dat --url ${COVERITY_URL} --preview-report-v2 preview-report.json --stream ${COVERITY_STREAM_NAME}
           NUM_NEW_DEFECTS=`cat preview-report.json | jq -re .issueInfo[].presentInComparisonSnapshot | grep false | wc -l`
           if [ ${NUM_NEW_DEFECTS} -gt 0 ]; then

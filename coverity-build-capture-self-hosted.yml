@@ -63,6 +63,12 @@ jobs:
       # Specifies your build command here. If you have a more complex build
       # process, with multiple steps needed, you may need to copy this
       # template and modify as needed to suit your environment.
+      #
+      # If you specifiy the build command in a project-specific secret,
+      #   e.g. ${{ secrets.COVERITY_BUILD_COMMAND }}
+      # You may be able to keep the template generic and free from any
+      # project-specific details, allowing you to use it as an actual
+      # workflow template.
 
       BUILD_COMMAND: "./configure && make all"
 
@@ -78,7 +84,6 @@ jobs:
       - uses: ouzi-dev/commit-status-updater@v1.1.0
         with:
           name: "Coverity Policy Check"
-
 
       # Save the Coverity license from a GitHub Secret to a file in order
       # to pass to the Coverity tools
@@ -208,23 +213,6 @@ jobs:
             --checkoutPath $GITHUB_REPOSITORY `pwd` $GITHUB_SHA \
             --outputFile synopsys-coverity-github-sarif.json
 
-      # The coverity-report-output-v7-json action will take the results from Coverity and present them
-      # as review feedback on pull request
-      - name: Coverity Pull Request Feedback
-        if: ${{github.event_name == 'pull_request'}}
-        uses: synopsys-sig/coverity-report-output-v7-json@v0.0.1
-        with:
-          # The following parameters are REQUIRED
-          json-file-path: ./coverity-incremental-results.json
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          # If the following optional parameters are specified, the results from the JSON output will be
-          # compared to the baseline issues in the specified project, and only NEW issues will be reported
-          # in the pull request.
-          coverity-url: ${{ secrets.COVERITY_URL }}
-          coverity-project-name: ${{ github.event.repository.name }}
-          coverity-username: ${{ secrets.COVERITY_USER }}
-          coverity-password: ${{ secrets.COVERITY_PASSPHRASE }}
-
       - name: Upload SARIF file
         if: ${{github.event_name == 'push'}}
         uses: github/codeql-action/upload-sarif@v1
@@ -260,7 +248,6 @@ jobs:
         if: ${{github.event_name == 'pull_request'}}
         run: |
           export COVERITY_STREAM_NAME=${GITHUB_REPOSITORY##*/}-$BASE_BRANCH
-          echo RUN cov-commit-defects --dir idir --security-file coverity-license.dat --url ${COVERITY_URL} --preview-report-v2 preview-report.json --stream ${COVERITY_STREAM_NAME}
           cov-commit-defects --dir idir --security-file coverity-license.dat --url ${COVERITY_URL} --preview-report-v2 preview-report.json --stream ${COVERITY_STREAM_NAME}
           NUM_NEW_DEFECTS=`cat preview-report.json | jq -re .issueInfo[].presentInComparisonSnapshot | grep false | wc -l`
           if [ ${NUM_NEW_DEFECTS} -gt 0 ]; then
