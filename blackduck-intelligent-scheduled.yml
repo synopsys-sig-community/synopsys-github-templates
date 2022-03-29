@@ -1,11 +1,12 @@
-name: Black Duck Rapid Scan
+name: Black Duck Intelligent Scan
 
-# Run Rapid Scan on all pull requests and pushes to a main branch
 on:
-  pull_request:
-    branches:
-      - master
-  push:
+  # Run intelligent scans on schedule at 11:05 pm every night
+  schedule:
+    - cron:  '5 23 * * *'
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
 
 jobs:
   build:
@@ -31,8 +32,8 @@ jobs:
         #env:
         #  NODE_EXTRA_CA_CERTS: ${{ secrets.LOCAL_CA_CERT_PATH }}
         with:
-            scan-mode: RAPID
-            github-token: ${{ secrets.GITHUB_TOKEN }}
-            detect-version: 7.9.0
-            blackduck-url: ${{ secrets.BLACKDUCK_URL }}
-            blackduck-api-token: ${{ secrets.BLACKDUCK_API_TOKEN }}
+          scan-mode: INTELLIGENT
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          detect-version: 7.12.0
+          blackduck-url: ${{ secrets.BLACKDUCK_URL }}
+          blackduck-api-token: ${{ secrets.BLACKDUCK_API_TOKEN }}

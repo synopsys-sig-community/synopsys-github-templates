@@ -2,27 +2,27 @@
 
 Modern applications are a complex mix of proprietary and open source code, APIs and user interfaces, application behavior, and deployment workflows. Security issues at any point in this software supply chain can leave you and your customers  at risk. Synopsys solutions help you identify and   manage software supply chain risks end-to-end.
 
-The Synopsys GitHub DevOps Templates repository contains GitHub workflow .yml templates that allow you to integrate Synopsys AST soltuions into your GitHub Actions based pipeline. It is recommended that you clone this repo into a copy within your own organiaztion, and then leverage these workflows according to GitHub best practices:
+The Synopsys GitHub DevOps Templates repository contains a collection of .yml templates, and composite GitHub Actions that can be used to integrate Synopsys AST soltuions into your GitHub CI/CD workflows.
+For the workflow templates, it is recommended that you clone this repo into a copy within your own organiaztion, and then leverage these workflows according to GitHub best practices:
 
 - [Sharing workflows, secrets, and runners with your organization](https://docs.github.com/en/actions/learn-github-actions/sharing-workflows-secrets-and-runners-with-your-organization).
 - [Using workflow templates](https://docs.github.com/en/actions/learn-github-actions/using-workflow-templates)
+
+For the composite GitHub Actions, these are provided as reference examples that you can use as-is or copy and modify to suit your own purposes. 
 
 These templates and scripts are provided under an OSS license (specified in the LICENSE file) and have been developed by Synopsys field engineers as a contribution to the Synopsys user community. Please direct questions and comments to the approproate forum in the Synopsys user community.
 
 # Available Templates
 
-## Coverity (cov-buid/cov-capture)
+## Coverity
 
 Run a Coverity SAST scan as part of your GitHub CI/CD workflow. These templates are written for the traditional cov-build or cov-capture workflow, with cov-analyze or cov-run-desktop running localy and a central Coverity Connect server. There are two instances of this recipe:
 
-- [coverity-auto-capture-self-hosted.yml](coverity-auto-capture-self-hosted.yml) - Runs Coverity using the "auto capture" process on a self-hosted runner. Since this recipe requires no special knowledge of the project being tested, it can be copied into a repository and used right away. 
-- [coverity-build-capture-self-hosted.yml](coverity-build-capture-self-hosted.yml) - Runs Coverity using the classic build capture process on a self-hosted runner. This recipe will require a project-specific build command, but you may choose to keep the template generic by specifying the build command in a project-specific environment variable or secret.
+- [coverity](coverity/README.md) - For traditional Coverity, using Coverity Connect and cov-build/cov-capture/cov-analyze. This is a composite GitHub action that contains only workflow steps as configuration as code. 
+This recipe implements the current recommended best practices for running Coverity in a GitHub workflow and the README can provide more details.  
+- [coverity-thin-client](coverity-thin-client/README.md) - Coming soon! A composite GitHub action that demonstrates how to use the Coverity CLI and new Coverity Scan Service to offload analysis jobs from your GitHub runners.
 
 The templates use the [Coverity Report Output V7 JSON Action](https://github.com/synopsys-sig/coverity-report-output-v7-json) to provide feedback to developers. Please see the action's own README for details on how it works.
-
-Each template is commented fully to explain each step of the process.
-
-Both of the above templates use a self-hosted runner. This is recommended when using the traditional Coverity workflow due to the large footprint of the Coverity installation. To mitigate the overhead of setting up the self-hosted runner, [an example Docker configuration is provided that shows how to set up such an environment.](docker/coverity-auto-capture-runner/)
 
 ## Black Duck
 
@@ -35,8 +35,11 @@ If scheduling is inconvenient, an good alternative trade-off is running Rapid Sc
 
 The two templates include:
 
-- [blackduck-rapid.yml](blackduck-rapid.yml) - Runs Black Duck Rapid Scan on a pull request.
-- [blackduck-intelligent.yml](blackduck-intelligent.yml) - Runs Black Duck Full (or "Intelligent") Scan on a schedule.
+- [blackduck.yml](blackduck-rapid.yml) - Runs Black Duck Rapid Scan on pull requests (this may run multiple times, as changes are added to the pull request) and a Full/Intelligent scan on pushes to main branches. For pull requests, feedback
+is limited to only new policy violations introduced by the change. For pushes, the full Black Duck scan is run including signature and binary analysis and no feedback is provided within GitHub. 
+- [blackduck-intelligent-scheduled.yml](blackduck-intelligent-scheduled.yml) - Runs Black Duck Full (or "Intelligent") Scan on a schedule. If running a full/intelligent scan on every push is too much for your environment (in the above
+template there will be at least one rapid and one intelliegnt for every PR - one when the PR is created, and the other when the PR is merged and a push is received) you may prefer to run the intelligent scans on a schedule. This provides
+an example of how to run them on a cron style schedule managed by GitHub.
 
 The templates use the [Black Duck Detect Action](https://github.com/synopsys-sig/detect-action) to provide feedback to developers. Please see the action's own README    for details on how it works.
 
@@ -48,5 +51,5 @@ The Black Duck detect process is very lightweight, and these can be used easily 
 
 Future templates will include:
 
-- Coverity CLI, including the new Thin Client and Scan Service
-- Polaris
+- Coverity CLI support, including the new Thin Client and Scan Service
+- Polaris support

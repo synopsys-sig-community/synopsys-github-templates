@@ -37,6 +37,9 @@ jobs:
         # in the last central full/intelligent scan, and only report the new violations. This is helpful
         # to keep developers focused in their day to day on their code changes and not overwhelm them with
         # findings they may not be responsible for.
+        #
+        # See https://community.synopsys.com/s/document-item?bundleId=integrations-detect&topicId=properties%2Fconfiguration%2Fblackduck-server.html&_LANG=enus
+        # and search for COMPARE_MODE for more details.
         env:
           DETECT_BLACKDUCK_RAPID_COMPARE_MODE: BOM_COMPARE_STRICT
         # You can use this option to configure a CA cert if using a self-hosted runner and self-signed

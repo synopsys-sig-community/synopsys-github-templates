@@ -32,6 +32,9 @@
       coverity-project-name:
         description: "Name of Coverity project"
         required: false
+      generate-sarif:
+        description: "Optional SARIF output step - true or false"
+        required: false
       github-token:
         description: "GitHub Access Token"
         required: true
@@ -116,7 +119,7 @@
             echo == Run Coverity BUILD Capture: ${{ inputs.build-command }}
             echo ========================================================================================
             echo
-            cov-build --dir idir ${{ inputs.build-command }} ${{ inputs.cov-build-options }}
+            cov-build --dir idir ${{ inputs.cov-build-options }} ${{ inputs.build-command }}
           fi
 
       # On pushes to a main branch, run a Full Coverity analysis using auto
@@ -232,6 +235,7 @@
       # if you have a subscription to GitHub Security.
 
       - name: Export Coverity Results to SARIF
+        if: "${{ inputs.generate-sarif }}" == "true"
         shell: bash
         run: |
           echo
@@ -248,6 +252,7 @@
             --outputFile synopsys-coverity-github-sarif.json
 
       - name: Upload SARIF file
+        if: "${{ inputs.generate-sarif }}" == "true"
         uses: github/codeql-action/upload-sarif@v1
         with:
           # Path to SARIF file relative to the root of the repository
