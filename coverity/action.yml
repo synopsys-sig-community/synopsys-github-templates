@@ -71,7 +71,7 @@
         if: ${{ github.event_name != 'pull_request' }}
         shell: bash
         run: |
-          if [ "${{ inputs.create_stream_and_project }}" == "true" ]; then
+          if [ "${{ inputs.create-stream-and-project }}" == "true" ]; then
             echo
             echo ========================================================================================
             echo == Initialize Coverity project and stream
