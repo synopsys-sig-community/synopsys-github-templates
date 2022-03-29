@@ -35,7 +35,7 @@
       github_token:
         description: "GitHub Access Token"
         required: true
-      create_stream:
+      create-stream-and-project:
         description: "Create stream and project - true or false"
         required: false
 
@@ -71,7 +71,7 @@
         if: ${{ github.event_name != 'pull_request' }}
         shell: bash
         run: |
-          if [ "${{ inputs.create_stream }}" == "true" ]; then
+          if [ "${{ inputs.create_stream_and_project }}" == "true" ]; then
             echo
             echo ========================================================================================
             echo == Initialize Coverity project and stream
