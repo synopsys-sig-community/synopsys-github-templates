@@ -1,6 +1,5 @@
-name: Black Duck Rapid Scan
+name: Black Duck
 
-# Run Rapid Scan on all pull requests and pushes to a main branch
 on:
   # Run Black Duck on pushes to main branches, and pull requests that are going
   # to be merged to main branches.
