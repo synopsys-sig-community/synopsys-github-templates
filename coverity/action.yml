@@ -2,37 +2,37 @@
     description: "Template for running Coverity in GitHub"
 
     inputs:
-      coverity_url:
+      coverity-url:
         description: "URL to Coverity Connect instance"
         required: true
-      coverity_user:
+      coverity-user:
         description: "Coverity Connect user with permission to create streams and commit results"
         required: true
-      coverity_passphrase:
+      coverity-passphrase:
         description: "Coverity Connect user password"
         required: true
-      build_command:
+      build-command:
         description: "Optional build command - if not specified, auto capture will be used"
         required: false
-      cov_build_options:
+      cov-build-options:
         description: "Optional command line options for cov-build"
         required: false
-      cov_analyze_options:
+      cov-analyze-options:
         description: "Optional command line arguments for cov-analyze"
         required: false
-      security_gate_view:
+      security-gate-view-name:
         description: "Name of saved view in Coverity Connect to use for security gate"
         required: false
-      coverity_checker_options:
+      coverity-checker-options:
         description: "Command line arguments to pass to Coverity analysis"
         required: false
-      coverity_stream_name:
+      coverity-stream-name:
         description: "Name of Coverity stream"
         required: false
-      coverity_project_name:
+      coverity-project-name:
         description: "Name of Coverity project"
         required: false
-      github_token:
+      github-token:
         description: "GitHub Access Token"
         required: true
       create-stream-and-project:
@@ -77,25 +77,25 @@
             echo == Initialize Coverity project and stream
             echo ========================================================================================
             echo
-            if [ "${{ inputs.coverity_stream_name }}" == "" ]; then
+            if [ "${{ inputs.coverity-stream-name }}" == "" ]; then
               export COVERITY_STREAM_NAME=${GITHUB_REPOSITORY##*/}-${GITHUB_REF##*/}
             else
-              export COVERITY_STREAM_NAME=${{ inputs.coverity_stream_name }}
+              export COVERITY_STREAM_NAME=${{ inputs.coverity-stream-name }}
             fi
-            if [ "${{ inputs.coverity_project_name }}" == "" ]; then
+            if [ "${{ inputs.coverity-project-name }}" == "" ]; then
               export COVERITY_PROJECT_NAME=${GITHUB_REPOSITORY##*/}
             else
-              export COVERITY_PROJECT_NAME=${{ inputs.coverity_project_name }}
+              export COVERITY_PROJECT_NAME=${{ inputs.coverity-project-name }}
             fi
             echo Ensure that project "$COVERITY_PROJECT_NAME" exists
-            cov-manage-im --url ${{ inputs.coverity_url }} --on-new-cert trust --mode projects --add --set name:"$COVERITY_PROJECT_NAME" || true
+            cov-manage-im --url ${{ inputs.coverity-url }} --on-new-cert trust --mode projects --add --set name:"$COVERITY_PROJECT_NAME" || true
             echo Ensure that stream "$COVERITY_STREAM_NAME" exists
-            cov-manage-im --url ${{ inputs.coverity_url }} --on-new-cert trust --mode streams --add -set name:"$COVERITY_STREAM_NAME" || true
-            cov-manage-im --url ${{ inputs.coverity_url }} --on-new-cert trust --mode projects --update --name "$COVERITY_PROJECT_NAME" --insert stream:"$COVERITY_STREAM_NAME" || true
+            cov-manage-im --url ${{ inputs.coverity-url }} --on-new-cert trust --mode streams --add -set name:"$COVERITY_STREAM_NAME" || true
+            cov-manage-im --url ${{ inputs.coverity-url }} --on-new-cert trust --mode projects --update --name "$COVERITY_PROJECT_NAME" --insert stream:"$COVERITY_STREAM_NAME" || true
           fi
         env:
-          COV_USER: ${{ inputs.coverity_user }}
-          COVERITY_PASSPHRASE: ${{ inputs.coverity_passphrase }}
+          COV_USER: ${{ inputs.coverity-user }}
+          COVERITY_PASSPHRASE: ${{ inputs.coverity-passphrase }}
 
       # Always run either a full build or auto-capture. A partial capture is possible for incremetnal analysis,
       # but this will impact the results further. For C/C++ and large Java projects however this may be required
@@ -103,7 +103,7 @@
       - name: Coverity Capture
         shell: bash
         run: |
-          if [ "${{ inputs.build_command }}" == "" ]; then
+          if [ "${{ inputs.build-command }}" == "" ]; then
             echo
             echo ========================================================================================
             echo == Run Coverity AUTO Capture
@@ -113,10 +113,10 @@
           else
             echo
             echo ========================================================================================
-            echo == Run Coverity BUILD Capture: ${{ inputs.build_command }}
+            echo == Run Coverity BUILD Capture: ${{ inputs.build-command }}
             echo ========================================================================================
             echo
-            cov-build --dir idir ${{ inputs.build_command }} ${{ inputs.cov_build_options }}
+            cov-build --dir idir ${{ inputs.build-command }} ${{ inputs.cov-build-options }}
           fi
 
       # On pushes to a main branch, run a Full Coverity analysis using auto
@@ -138,18 +138,18 @@
           echo == Run FULL Coverity analysis for ${GITHUB_REPOSITORY##*/}-${GITHUB_REF##*/}
           echo ========================================================================================
           echo
-          if [ "${{ inputs.coverity_stream_name }}" == "" ]; then
+          if [ "${{ inputs.coverity-stream-name }}" == "" ]; then
             export COVERITY_STREAM_NAME=${GITHUB_REPOSITORY##*/}-${GITHUB_REF##*/}
           else
-            export COVERITY_STREAM_NAME=${{ inputs.coverity_stream_name }}
+            export COVERITY_STREAM_NAME=${{ inputs.coverity-stream-name }}
           fi
-          cov-analyze --dir idir --strip-path `pwd` ${{ inputs.coverity_checker_options }} ${{ inputs.cov_analyze_options }}
-          cov-commit-defects --dir idir --ticker-mode none --url ${{ inputs.coverity_url }} --on-new-cert trust --stream \
+          cov-analyze --dir idir --strip-path `pwd` ${{ inputs.coverity-checker-options }} ${{ inputs.cov-analyze-options }}
+          cov-commit-defects --dir idir --ticker-mode none --url ${{ inputs.coverity-url }} --on-new-cert trust --stream \
               $COVERITY_STREAM_NAME --scm git --description "GitHub Workflow $GITHUB_WORKFLOW for $GITHUB_REPO" --version $GITHUB_SHA
           cov-format-errors --dir idir --json-output-v7 coverity-results.json
         env:
-          COV_USER: ${{ inputs.coverity_user }}
-          COVERITY_PASSPHRASE: ${{ inputs.coverity_passphrase }}
+          COV_USER: ${{ inputs.coverity-user }}
+          COVERITY_PASSPHRASE: ${{ inputs.coverity-passphrase }}
 
       # Use the helpful third party Jitterbit Get Changed Files action to
       # determine what files have been added or modified.
@@ -184,24 +184,24 @@
           echo == Run INCREMENTAL Coverity analysis for ${GITHUB_REPOSITORY##*/}-$BASE_BRANCH
           echo ========================================================================================
           echo
-          if [ "${{ inputs.coverity_stream_name }}" == "" ]; then
+          if [ "${{ inputs.coverity-stream-name }}" == "" ]; then
             export COVERITY_STREAM_NAME=${GITHUB_REPOSITORY##*/}-$BASE_BRANCH
           else
-            export COVERITY_STREAM_NAME=${{ inputs.coverity_stream_name }}
+            export COVERITY_STREAM_NAME=${{ inputs.coverity-stream-name }}
           fi
           for changed_file in ${{ steps.changeset.outputs.added_modified }}; do
             echo ${changed_file} >> coverity-files-to-scan.txt
             echo "Scan changed file ${changed_file}."
           done
-          cov-run-desktop --dir idir --strip-path `pwd` --url ${{ inputs.coverity_url }} --stream $COVERITY_STREAM_NAME --present-in-reference false \
+          cov-run-desktop --dir idir --strip-path `pwd` --url ${{ inputs.coverity-url }} --stream $COVERITY_STREAM_NAME --present-in-reference false \
             --ignore-uncapturable-inputs true \
             --json-output-v7 coverity-results.json \
-            ${{ inputs.cov_analyze_options }} \
+            ${{ inputs.cov-analyze-options }} \
             ${{ steps.changeset.outputs.added_modified }}
         env:
           BASE_BRANCH: ${{ github.base_ref }}
-          COV_USER: ${{ inputs.coverity_user }}
-          COVERITY_PASSPHRASE: ${{ inputs.coverity_passphrase }}
+          COV_USER: ${{ inputs.coverity-user }}
+          COVERITY_PASSPHRASE: ${{ inputs.coverity-passphrase }}
 
       # The coverity-report-output-v7-json action will take the results
       # from Coverity and present them as review feedback on pull request.
@@ -214,14 +214,14 @@
         with:
           # The following parameters are REQUIRED
           json-file-path: ./coverity-results.json
-          github-token: ${{ inputs.github_token }}
+          github-token: ${{ inputs.github-token }}
           # If the following optional parameters are specified, the results from the JSON output will be
           # compared to the baseline issues in the specified project, and only NEW issues will be reported
           # in the pull request.
-          coverity-url: ${{ inputs.coverity_url }}
+          coverity-url: ${{ inputs.coverity-url }}
           coverity-project-name: ${{ github.event.repository.name }}
-          coverity-username: ${{ inputs.coverity_user }}
-          coverity-password: ${{ inputs.coverity_passphrase }}
+          coverity-username: ${{ inputs.coverity-user }}
+          coverity-password: ${{ inputs.coverity-passphrase }}
 
       # Generate SARIF using Coverity's built-in tool. Note that this is not
       # included in the regular Coverity PATH, so the full path must be
@@ -254,7 +254,7 @@
           sarif_file: synopsys-coverity-github-sarif.json
 
       - name: Coverity Security Gate (Full analysis)
-        if: ${{ github.event_name != 'pull_request' }} and ${{ inputs.security_gate_view }} != ""
+        if: ${{ github.event_name != 'pull_request' }} and ${{ inputs.security-gate-view-name }} != ""
         shell: bash
         run: |
           echo
@@ -262,13 +262,13 @@
           echo == Check security gate for project ${GITHUB_REPOSITORY##*/}: $SECURITY_GATE_VIEW
           echo ========================================================================================
           echo
-          if [ "${{ inputs.coverity_project_name }}" == "" ]; then
+          if [ "${{ inputs.coverity-project-name }}" == "" ]; then
             export COVERITY_PROJECT_NAME=${GITHUB_REPOSITORY##*/}
           else
-            export COVERITY_PROJECT_NAME=${{ inputs.coverity_project_name }}
+            export COVERITY_PROJECT_NAME=${{ inputs.coverity-project-name }}
           fi
-          COVERITY_VIEW_ESCAPED=`jq -rn --arg x "${{ inputs.security_gate_view }}" '$x|@uri'`
-          curl -kfLsS --user $COV_USER:$COVERITY_PASSPHRASE ${{ inputs.coverity_url }}/api/viewContents/issues/v1/$COVERITY_VIEW_ESCAPED?projectId=$COVERITY_PROJECT_NAME > security-gate-results.json
+          COVERITY_VIEW_ESCAPED=`jq -rn --arg x "${{ inputs.security-gate-view-name }}" '$x|@uri'`
+          curl -kfLsS --user $COV_USER:$COVERITY_PASSPHRASE ${{ inputs.coverity-url }}/api/viewContents/issues/v1/$COVERITY_VIEW_ESCAPED?projectId=$COVERITY_PROJECT_NAME > security-gate-results.json
           if [ $(cat security-gate-results.json | jq .viewContentsV1.totalRows) -ne 0 ]; then
             echo Security gate found policy violations
             cat security-gate-results.json | jq .viewContentsV1.rows
@@ -277,8 +277,8 @@
             echo "SECURITY_GATE_STATUS=success" >> $GITHUB_ENV
           fi
         env:
-          COV_USER: ${{ inputs.coverity_user }}
-          COVERITY_PASSPHRASE: ${{ inputs.coverity_passphrase }}
+          COV_USER: ${{ inputs.coverity-user }}
+          COVERITY_PASSPHRASE: ${{ inputs.coverity-passphrase }}
 
       # For a pull request, until the GitHub action supports this, we
       # will run a preview commit and check how many newly introduced
@@ -293,12 +293,12 @@
           echo == Check security gate for local analysis results
           echo ========================================================================================
           echo
-          if [ "${{ inputs.coverity_stream_name }}" == "" ]; then
+          if [ "${{ inputs.coverity-stream-name }}" == "" ]; then
             export COVERITY_STREAM_NAME=${GITHUB_REPOSITORY##*/}-$BASE_BRANCH
           else
-            export COVERITY_STREAM_NAME=${{ inputs.coverity_stream_name }}
+            export COVERITY_STREAM_NAME=${{ inputs.coverity-stream-name }}
           fi
-          cov-commit-defects --dir idir --url ${{ inputs.coverity_url }} --preview-report-v2 preview-report.json --stream ${COVERITY_STREAM_NAME}
+          cov-commit-defects --dir idir --url ${{ inputs.coverity-url }} --preview-report-v2 preview-report.json --stream ${COVERITY_STREAM_NAME}
           NUM_NEW_DEFECTS=`cat preview-report.json | jq -re .issueInfo[].presentInComparisonSnapshot | grep false | wc -l || true`
           echo TEST
           if [ "$NUM_NEW_DEFECTS" -eq 0 ]; then
@@ -310,8 +310,8 @@
           fi
         env:
           BASE_BRANCH: ${{ github.base_ref }}
-          COV_USER: ${{ inputs.coverity_user }}
-          COVERITY_PASSPHRASE: ${{ inputs.coverity_passphrase }}
+          COV_USER: ${{ inputs.coverity-user }}
+          COVERITY_PASSPHRASE: ${{ inputs.coverity-passphrase }}
 
       - uses: ouzi-dev/commit-status-updater@v1.1.0
         with:
