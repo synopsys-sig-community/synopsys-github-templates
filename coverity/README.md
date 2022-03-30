@@ -63,6 +63,8 @@ on the Coverity Connect server. This can be very helpful for on-boarding new pro
 project specific data in the GitHub workflows, and without doing any pre-preparation on the server. Simply install the template
 and go!
 
+The Coverity Connect credentials used must have permission to manage streams and projects.
+
 Automatic stream and project creation is off by default and must be enabled with the following option:
 
 | Option | Description |

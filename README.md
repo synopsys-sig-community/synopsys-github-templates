@@ -26,14 +26,7 @@ The templates use the [Coverity Report Output V7 JSON Action](https://github.com
 
 ## Black Duck
 
-Run a Black Duck SCA scan as part of your GitHub CI/CD workflow. For best performance, these templates suggest a hybrid scanning approach:
-
-1. Rapid Scans run on pushes to and pull requests opened for main branches. This provides fast turnaround for results, and minimizes overhead on the Black Duck Hub server for ephemeral tests. **Note:** rapid scan only runs package manager scans, and does not include signature, binary, and other scanning. This is usually a reasonable trade-off for CI/CD performance.
-2. Full Scans are run on a scheduled basis. This ensures that the Black Duck Hub server is updated when new components are introduced to your projects and advanced scanning techniques like signature and binary scanning are run.
-
-If scheduling is inconvenient, an good alternative trade-off is running Rapid Scans on pull requests, and Full scans on pushes. While a merge and push will always follow a pull request, there can be many commits to a single pull request, so there could be many Rapid Scans run for each Full scan.
-
-The two templates include:
+Run a Black Duck SCA scan as part of your GitHub CI/CD workflow. The two templates include:
 
 - [blackduck.yml](blackduck-rapid.yml) - Runs Black Duck Rapid Scan on pull requests (this may run multiple times, as changes are added to the pull request) and a Full/Intelligent scan on pushes to main branches. For pull requests, feedback
 is limited to only new policy violations introduced by the change. For pushes, the full Black Duck scan is run including signature and binary analysis and no feedback is provided within GitHub. 
