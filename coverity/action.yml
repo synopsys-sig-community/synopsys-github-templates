@@ -100,7 +100,7 @@
           COV_USER: ${{ inputs.coverity-user }}
           COVERITY_PASSPHRASE: ${{ inputs.coverity-passphrase }}
 
-      # Always run either a full build or auto-capture. A partial capture is possible for incremetnal analysis,
+      # Always run either a full build or auto-capture. A partial capture is possible for incremental analysis,
       # but this will impact the results further. For C/C++ and large Java projects however this may be required
       # and is left as an exercise to the reader.
       - name: Coverity Capture
@@ -305,7 +305,6 @@
           fi
           cov-commit-defects --dir idir --url ${{ inputs.coverity-url }} --preview-report-v2 preview-report.json --stream ${COVERITY_STREAM_NAME}
           NUM_NEW_DEFECTS=`cat preview-report.json | jq -re .issueInfo[].presentInComparisonSnapshot | grep false | wc -l || true`
-          echo TEST
           if [ "$NUM_NEW_DEFECTS" -eq 0 ]; then
             echo No new defects found - success
             echo ::save-state name=security_gate_status::success

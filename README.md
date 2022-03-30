@@ -3,7 +3,7 @@
 Modern applications are a complex mix of proprietary and open source code, APIs and user interfaces, application behavior, and deployment workflows. Security issues at any point in this software supply chain can leave you and your customers  at risk. Synopsys solutions help you identify and   manage software supply chain risks end-to-end.
 
 The Synopsys GitHub DevOps Templates repository contains a collection of .yml templates, and composite GitHub Actions that can be used to integrate Synopsys AST soltuions into your GitHub CI/CD workflows.
-For the workflow templates, it is recommended that you clone this repo into a copy within your own organiaztion, and then leverage these workflows according to GitHub best practices:
+For the workflow templates, it is recommended that you clone this repo into a copy within your own organization, and then leverage these workflows according to GitHub best practices:
 
 - [Sharing workflows, secrets, and runners with your organization](https://docs.github.com/en/actions/learn-github-actions/sharing-workflows-secrets-and-runners-with-your-organization).
 - [Using workflow templates](https://docs.github.com/en/actions/learn-github-actions/using-workflow-templates)
