@@ -28,7 +28,7 @@ The templates use the [Coverity Report Output V7 JSON Action](https://github.com
 
 Run a Black Duck SCA scan as part of your GitHub CI/CD workflow. The two templates include:
 
-- [blackduck.yml](blackduck-rapid.yml) - Runs Black Duck Rapid Scan on pull requests (this may run multiple times, as changes are added to the pull request) and a Full/Intelligent scan on pushes to main branches. For pull requests, feedback
+- [blackduck.yml](blackduck.yml) - Runs Black Duck Rapid Scan on pull requests (this may run multiple times, as changes are added to the pull request) and a Full/Intelligent scan on pushes to main branches. For pull requests, feedback
 is limited to only new policy violations introduced by the change. For pushes, the full Black Duck scan is run including signature and binary analysis and no feedback is provided within GitHub. 
 - [blackduck-intelligent-scheduled.yml](blackduck-intelligent-scheduled.yml) - Runs Black Duck Full (or "Intelligent") Scan on a schedule. If running a full/intelligent scan on every push is too much for your environment (in the above
 template there will be at least one rapid and one intelligent for every PR - one when the PR is created, and the other when the PR is merged and a push is received) you may prefer to run the intelligent scans on a schedule. This provides
