@@ -31,6 +31,18 @@ Coverity credentials and some reasonable options, which are described in depth i
           github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
+The template assumes the following secrets to be set, providing the location and credentials for your Coverity
+Connect instance:
+
+| Variable | Description |
+| --- | --- |
+| COVERITY_URL | URL to your Coverity Connect instance |
+| COVERITY_USER | User name for authenticating to Coverity Connect |
+| COVERITY_PASSPHRASE | Password for authenticating to Coverity Connect |
+
+The GITHUB_TOKEN secret does not need to be set by you - this is automatically set during workflow
+execution to a token suitable for workflow automation to use.
+
 **Note:** This template assumes that it will be running in the context of a self-hosted GitHub runner, with the Coverity tools
 installed, configured and available in the PATH. Due to the large footprint of the traditional Coverity toolchain, we
 recommend using a self-hosted runner. A separate template will be made available for use with the new Coverity Scan Service.
