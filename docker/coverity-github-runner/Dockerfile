@@ -31,7 +31,7 @@ COPY --chown=runner:runner entrypoint.sh run.sh ./
 RUN sudo chmod u+x ./entrypoint.sh ./run.sh
 
 # Install Coverity, license, and run basic cov-configure
-COPY cov-analysis-linux64-${COVERITY_VERSION}.tar.gz ./
+COPY cov-analysis-linux64-${COVERITY_VERSION}.tar.gz license.dat ./
 RUN tar xzf cov-analysis-linux64-${COVERITY_VERSION}.tar.gz && rm cov-analysis-linux64-${COVERITY_VERSION}.tar.gz && mv cov-analysis-linux64-${COVERITY_VERSION} cov-analysis-linux64 && mv license.dat cov-analysis-linux64/bin/ && ./cov-analysis-linux64/bin/cov-configure --java && ./cov-analysis-linux64/bin/cov-configure --gcc
 
 ENTRYPOINT ["/home/runner/entrypoint.sh"]
