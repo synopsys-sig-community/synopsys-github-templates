@@ -38,6 +38,9 @@
       github-token:
         description: "GitHub Access Token"
         required: true
+      diagnostic-mode:
+        description: "Attach diagnostics to workflow run"
+        required: false
       create-stream-and-project:
         description: "Create stream and project - true or false"
         required: false
@@ -316,6 +319,13 @@
           BASE_BRANCH: ${{ github.base_ref }}
           COV_USER: ${{ inputs.coverity-user }}
           COVERITY_PASSPHRASE: ${{ inputs.coverity-passphrase }}
+
+      - name: Archive Coverity Intermediate Directory
+        if: ${{ inputs.diagnostic-mode == 'true' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverity-idir
+          path: idir
 
       - uses: ouzi-dev/commit-status-updater@v1.1.0
         with:
