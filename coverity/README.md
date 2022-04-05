@@ -85,12 +85,13 @@ Automatic stream and project creation is off by default and must be enabled with
 
 ### Build Capture or Auto Capture
 
-Coverity's auto capture technology is helpful for on-boarding new projects, as it requires zero knowledge of the project - languages
-used, build system, package managers, etc. For on-boarding new projects (Note: C/C++, Swift and Objective-C are not supported) this
-is an easy choice as all you need to do is deploy the template. Build capture can produce more comprehensive results, but will require
-knowledge of how the project is built.
+Coverity has the ability to analyze your code with or without a build. Running with a build can provide
+more accurate results, as we identify precisely the components that go into your shipping software, whereeas
+if we run without a build we will leverage the source code and package manager for information about how your
+software is composed. This can lead to assumptions and less accurate or complete results.
 
-The default behavior of the template is auto capture.
+The default behavior of the template, if no build command is specified, is to automatically find the source
+code and dependencies based on source code and package manager files.
 
 To enable build capture, please use the following option:
 
@@ -110,7 +111,7 @@ provide feedback to developers.
 
 ![Coverity Review Feedback Screenshot](reviewComment.png)
 
-**Note:** A full build or auto capture is still used during pull requests - only the analysis step is incremental. For many projects
+**Note:** A full capture is still used during pull requests - only the analysis step is incremental. For many projects
 this is a good trade-off - Java for example tends to have fast build times, and by capturing the entire project the incremental
 analysis will have to make fewer assumptions about the code being analyzed, leading to higher confidence results.
 

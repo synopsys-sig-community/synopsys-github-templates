@@ -25,6 +25,14 @@ This recipe implements the current recommended best practices for running Coveri
 
 The templates use the [Coverity Report Output V7 JSON Action](https://github.com/synopsys-sig/coverity-report-output-v7-json) to provide feedback to developers. Please see the action's own README for details on how it works.
 
+## Polaris
+
+Run a Polaris SAST scan as part of your GitHub CI/CD workflow. These templates are written for the
+SaaS version of Coverity running on Polaris.
+
+- [polaris](https://github.com/jcroall/polaris-report-action) - For Polaris running on SaaS using the Polaris CLI. This recipe includes developer
+feedback on pull requests and has the potential for future enhancements like security gates and SARIF support.
+
 ## Black Duck
 
 Run a Black Duck SCA scan as part of your GitHub CI/CD workflow. The two templates include:
