@@ -1,0 +1,180 @@
+    name: "coverity-poc-wrapper"
+    description: "Wrapper for conveniently running a Coverity POC"
+
+    branding:
+      icon: "alert-triangle"
+      color: "yellow"
+
+    inputs:
+      coverity-url:
+        description: "URL to Coverity Connect instance"
+        required: true
+      coverity-user:
+        description: "Coverity Connect user with permission to create streams and commit results"
+        required: true
+      coverity-passphrase:
+        description: "Coverity Connect user password"
+        required: true
+      build-command:
+        description: "Optional build command - if not specified, auto capture will be used"
+        required: false
+      cov-build-options:
+        description: "Optional command line options for cov-build"
+        required: false
+      cov-analyze-options:
+        description: "Optional command line arguments for cov-analyze"
+        required: false
+      security-gate-view-name:
+        description: "Name of saved view in Coverity Connect to use for security gate"
+        required: false
+      coverity-checker-options:
+        description: "Command line arguments to pass to Coverity analysis"
+        required: false
+      coverity-stream-name:
+        description: "Name of Coverity stream"
+        required: false
+      coverity-project-name:
+        description: "Name of Coverity project"
+        required: false
+      generate-sarif:
+        description: "Optional SARIF output step - true or false"
+        required: false
+      github-token:
+        description: "GitHub Access Token"
+        required: true
+      diagnostic-mode:
+        description: "Attach diagnostics to workflow run"
+        required: false
+      create-stream-and-project:
+        description: "Create stream and project - true or false"
+        required: false
+
+    runs:
+      using: "composite"
+      steps:
+
+      # Initialize a status check to Pending using the third party
+      # commit-status-updater action.
+
+      - uses: ouzi-dev/commit-status-updater@v1.1.0
+        with:
+          name: "Coverity Policy Check"
+
+      - name: Get Pull Request Changeset
+        if: ${{ github.event_name == 'pull_request' }}
+        id: changeset
+        uses: jitterbit/get-changed-files@v1
+
+      - name: Run Coverity Scan in Docker
+        uses: synopsys-sig-community/synopsys-github-templates/coverity-poc-action@master
+        with:
+          coverity-url: ${{ inputs.coverity-url }}
+          coverity-user: ${{ inputs.coverity-user }}
+          coverity-passphrase: ${{ inputs.coverity-passphrase }}
+          build-command: ${{ inputs.build-command }}
+          cov-build-options: ${{ inputs.cov-build-options }}
+          cov-build-options: ${{ inputs.cov-build-options }}
+          cov-analyze-options: ${{ inputs.cov-analyze-options }}
+          security-gate-view-name: ${{ inputs.security-gate-view-name }}
+          coverity-checker-options: ${{ inputs.coverity-checker-options }}
+          coverity-stream-name: ${{ inputs.coverity-stream-name }}
+          coverity-project-name: ${{ inputs.coverity-project-name }}
+          generate-sarif: ${{ inputs.generate-sarif }}
+          github-token: ${{ inputs.github-token }}
+          diagnostic-mode: ${{ inputs.diagnostic-mode }}
+          create-stream-and-project: ${{ inputs.create-stream-and-project }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Coverity Pull Request Feedback
+        if: ${{github.event_name == 'pull_request'}}
+        uses: synopsys-sig/coverity-report-output-v7-json@v0.0.1
+        with:
+          # The following parameters are REQUIRED
+          json-file-path: ./coverity-results.json
+          github-token: ${{ inputs.github-token }}
+          # If the following optional parameters are specified, the results from the JSON output will be
+          # compared to the baseline issues in the specified project, and only NEW issues will be reported
+          # in the pull request.
+          coverity-url: ${{ inputs.coverity-url }}
+          coverity-project-name: ${{ github.event.repository.name }}
+          coverity-username: ${{ inputs.coverity-user }}
+          coverity-password: ${{ inputs.coverity-passphrase }}
+
+      - name: Upload SARIF file
+        if: ${{ inputs.generate-sarif == 'true' }}
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          # Path to SARIF file relative to the root of the repository
+          sarif_file: synopsys-coverity-github-sarif.json
+
+      - name: Coverity Security Gate (Full analysis)
+        if: ${{ github.event_name != 'pull_request' }} and ${{ inputs.security-gate-view-name }} != ""
+        shell: bash
+        run: |
+          echo
+          echo ========================================================================================
+          echo == Check security gate for project ${GITHUB_REPOSITORY##*/}: $SECURITY_GATE_VIEW
+          echo ========================================================================================
+          echo
+          if [ "${{ inputs.coverity-project-name }}" == "" ]; then
+            export COVERITY_PROJECT_NAME=${GITHUB_REPOSITORY##*/}
+          else
+            export COVERITY_PROJECT_NAME=${{ inputs.coverity-project-name }}
+          fi
+          COVERITY_VIEW_ESCAPED=`jq -rn --arg x "${{ inputs.security-gate-view-name }}" '$x|@uri'`
+          curl -kfLsS --user $COV_USER:$COVERITY_PASSPHRASE ${{ inputs.coverity-url }}/api/viewContents/issues/v1/$COVERITY_VIEW_ESCAPED?projectId=$COVERITY_PROJECT_NAME > security-gate-results.json
+          if [ $(cat security-gate-results.json | jq .viewContentsV1.totalRows) -ne 0 ]; then
+            echo Security gate found policy violations
+            cat security-gate-results.json | jq .viewContentsV1.rows
+            echo "SECURITY_GATE_STATUS=failure" >> $GITHUB_ENV
+          else
+            echo "SECURITY_GATE_STATUS=success" >> $GITHUB_ENV
+          fi
+        env:
+          COV_USER: ${{ inputs.coverity-user }}
+          COVERITY_PASSPHRASE: ${{ inputs.coverity-passphrase }}
+
+      # For a pull request, until the GitHub action supports this, we
+      # will run a preview commit and check how many newly introduced
+      # issues are being reported.
+
+      #- name: Coverity Security Gate (Incremental analysis)
+      #  if: ${{github.event_name == 'pull_request'}}
+      #  shell: bash
+      #  run: |
+      #    echo
+      #    echo ========================================================================================
+      #    echo == Check security gate for local analysis results
+      #    echo ========================================================================================
+      #    echo
+      #    if [ "${{ inputs.coverity-stream-name }}" == "" ]; then
+      #      export COVERITY_STREAM_NAME=${GITHUB_REPOSITORY##*/}-$BASE_BRANCH
+      #    else
+      #      export COVERITY_STREAM_NAME=${{ inputs.coverity-stream-name }}
+      #    fi
+      #    cov-commit-defects --dir idir --url ${{ inputs.coverity-url }} --preview-report-v2 preview-report.json --stream ${COVERITY_STREAM_NAME}
+      #    NUM_NEW_DEFECTS=`cat preview-report.json | jq -re .issueInfo[].presentInComparisonSnapshot | grep false | wc -l || true`
+      #    if [ "$NUM_NEW_DEFECTS" -eq 0 ]; then
+      #      echo No new defects found - success
+      #      echo ::save-state name=security_gate_status::success
+      #    else
+      #      echo New defects found - failure
+      #      echo ::save-state name=security_gate_status::failure
+      #    fi
+      #  env:
+      #    BASE_BRANCH: ${{ github.base_ref }}
+      #    COV_USER: ${{ inputs.coverity-user }}
+      #    COVERITY_PASSPHRASE: ${{ inputs.coverity-passphrase }}
+
+      #- name: Archive Coverity Intermediate Directory
+      #  if: ${{ inputs.diagnostic-mode == 'true' }}
+      #  uses: actions/upload-artifact@v3
+      #  with:
+      #    name: coverity-idir
+      #    path: idir
+
+      - uses: ouzi-dev/commit-status-updater@v1.1.0
+        with:
+          name: "Coverity Policy Check"
+          status: "${{ env.SECURITY_GATE_STATUS }}"
