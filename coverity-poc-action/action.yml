@@ -1,0 +1,69 @@
+name: "coverity-github-template"
+description: "Template for running Coverity in GitHub"
+author: "James Croall"
+branding:
+  icon: "alert-triangle"
+  color: "yellow"
+inputs:
+  coverity-url:
+    description: "URL to Coverity Connect instance"
+    required: true
+  coverity-user:
+    description: "Coverity Connect user with permission to create streams and commit results"
+    required: true
+  coverity-passphrase:
+    description: "Coverity Connect user password"
+    required: true
+  build-command:
+    description: "Optional build command - if not specified, auto capture will be used"
+    required: false
+  cov-build-options:
+    description: "Optional command line options for cov-build"
+    required: false
+  cov-analyze-options:
+    description: "Optional command line arguments for cov-analyze"
+    required: false
+  security-gate-view-name:
+    description: "Name of saved view in Coverity Connect to use for security gate"
+    required: false
+  coverity-checker-options:
+    description: "Command line arguments to pass to Coverity analysis"
+    required: false
+  coverity-stream-name:
+    description: "Name of Coverity stream"
+    required: false
+  coverity-project-name:
+    description: "Name of Coverity project"
+     required: false
+  generate-sarif:
+    description: "Optional SARIF output step - true or false"
+    required: false
+  github-token:
+    description: "GitHub Access Token"
+    required: true
+  diagnostic-mode:
+    description: "Attach diagnostics to workflow run"
+    required: false
+  create-stream-and-project:
+    description: "Create stream and project - true or false"
+    required: false
+
+runs:
+  using: "docker"
+  image: "docker://ghcr.io/synopsys-sig-community/coverity-poc-action:v0.0.1"
+  args:
+    - ${{ inputs.debug }}
+    - ${{ inputs.coverity-url }}
+    - ${{ inputs.coverity-user }}
+    - ${{ inputs.coverity-passphrase }}
+    - ${{ inputs.build-command }}
+    - ${{ inputs.cov-build-options }}
+    - ${{ inputs.cov-analyze-options }}
+    - ${{ inputs.security-gate-view-name }}
+    - ${{ inputs.coverity-checker-options }}
+    - ${{ inputs.coverity-stream-name }}
+    - ${{ inputs.coverity-project-name }}
+    - ${{ inputs.generate-sarif }}
+    - ${{ inputs.github-token }}
+    - ${{ inputs.diagnostic-mode }}
+    - ${{ inputs.create-stream-and-project }}
