@@ -34,7 +34,7 @@ inputs:
     required: false
   coverity-project-name:
     description: "Name of Coverity project"
-     required: false
+    required: false
   generate-sarif:
     description: "Optional SARIF output step - true or false"
     required: false
