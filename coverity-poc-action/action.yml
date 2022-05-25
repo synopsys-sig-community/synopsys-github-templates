@@ -47,6 +47,9 @@ inputs:
   create-stream-and-project:
     description: "Create stream and project - true or false"
     required: false
+  coverity-license:
+    description: "Coverity License contents"
+    required: true
 
 runs:
   using: "docker"
@@ -67,3 +70,4 @@ runs:
     - ${{ inputs.github-token }}
     - ${{ inputs.diagnostic-mode }}
     - ${{ inputs.create-stream-and-project }}
+    - ${{ inputs.coverity-license }}
