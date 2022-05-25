@@ -73,7 +73,6 @@
           coverity-passphrase: ${{ inputs.coverity-passphrase }}
           build-command: ${{ inputs.build-command }}
           cov-build-options: ${{ inputs.cov-build-options }}
-          cov-build-options: ${{ inputs.cov-build-options }}
           cov-analyze-options: ${{ inputs.cov-analyze-options }}
           security-gate-view-name: ${{ inputs.security-gate-view-name }}
           coverity-checker-options: ${{ inputs.coverity-checker-options }}
