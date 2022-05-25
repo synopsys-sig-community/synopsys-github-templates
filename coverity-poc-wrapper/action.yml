@@ -66,7 +66,7 @@
         uses: jitterbit/get-changed-files@v1
 
       - name: Run Coverity Scan in Docker
-        uses: synopsys-sig-community/synopsys-github-templates/coverity-poc-action@master
+        uses: synopsys-sig-community/synopsys-github-templates/coverity-poc-action@v0.0.1
         with:
           coverity-url: ${{ inputs.coverity-url }}
           coverity-user: ${{ inputs.coverity-user }}
