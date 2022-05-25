@@ -16,7 +16,7 @@ servicing jobs. You will need to pass the following environment variables to the
 | Environment Variable Name | Description |
 | --- | --- |
 | **GITHUB_OWNER** | The GitHub "owner" -- either a username or organization |
-| **GITHUB_REPOSITORY** | The GitHub repository to service -- if left out, will support the entire organization |
+| **GITHUB_REPOSITORY** | The GitHub repository to service - Just the name, not the full URL and do not include .git. If left out, will support the entire organization |
 | **GITHUB_PAT** | A GitHub personal access token with permission to establish self-hosted runners |
 
 Running the image will vary depending on your platform, but for a simple command line Docker instance it may
