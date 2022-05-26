@@ -68,6 +68,15 @@
         id: changeset
         uses: jitterbit/get-changed-files@v1
 
+      - name: Write Changeset to file
+        if: ${{github.event_name == 'pull_request'}}
+        shell: bash
+        run: |
+          for changed_file in ${{ steps.changeset.outputs.added_modified }}; do
+            echo ${changed_file} >> coverity-files-to-scan.txt
+            echo "Scan changed file ${changed_file}."
+          done
+
       - name: Run Coverity Scan in Docker
         uses: synopsys-sig-community/synopsys-github-templates/coverity-poc-action@v0.0.1
         with:
