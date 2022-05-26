@@ -171,7 +171,7 @@
           echo == Check security gate for local analysis results
           echo ========================================================================================
           echo Coverity results--
-          cat coverity-results.json
+          cat ./coverity-results-converted.json
           echo ========================================================================================
           echo Defect count--
           cat coverity-desktop-defects-count.txt
