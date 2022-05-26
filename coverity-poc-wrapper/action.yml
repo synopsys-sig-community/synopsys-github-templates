@@ -112,7 +112,7 @@
           sarif_file: synopsys-coverity-github-sarif.json
 
       - name: Coverity Security Gate (Full analysis)
-        if: ${{ (github.event_name != 'pull_request') && (inputs.security-gate-view-name != "") }}
+        if: ${{ (github.event_name != 'pull_request') && (inputs.security-gate-view-name != '') }}
         shell: bash
         run: |
           echo
