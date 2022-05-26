@@ -102,14 +102,15 @@
       - name: Post-process Coverity output
         if: ${{github.event_name == 'pull_request'}}
         shell: bash
-        run: cat ./coverity-results.json | sed 's/\/github\/workspace\///g' > ./coverity-results-stripped.json
+        run: awk '{gsub("/github/workspace", "${GITHU", $0); print}' coverity.json
+        run: cat ./coverity-results.json | sed "s|/github/workspace|$GITHUB_WORKSPACE|g" > ./coverity-results-converted.json
 
       - name: Coverity Pull Request Feedback
         if: ${{github.event_name == 'pull_request'}}
         uses: synopsys-sig/coverity-report-output-v7-json@v0.0.1
         with:
           # The following parameters are REQUIRED
-          json-file-path: ./coverity-results-stripped.json
+          json-file-path: ./coverity-results-converted.json
           github-token: ${{ inputs.github-token }}
           # If the following optional parameters are specified, the results from the JSON output will be
           # compared to the baseline issues in the specified project, and only NEW issues will be reported
