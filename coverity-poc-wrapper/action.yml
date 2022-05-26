@@ -111,6 +111,11 @@
           # Path to SARIF file relative to the root of the repository
           sarif_file: synopsys-coverity-github-sarif.json
 
+      - name: Initialize security check
+        shell: bash
+        run: |
+          echo "SECURITY_GATE_STATUS=success" >> $GITHUB_ENV
+
       - name: Coverity Security Gate (Full analysis)
         if: ${{ (github.event_name != 'pull_request') && (inputs.security-gate-view-name != '') }}
         shell: bash
