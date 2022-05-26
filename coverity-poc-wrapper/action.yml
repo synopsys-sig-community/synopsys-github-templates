@@ -102,7 +102,6 @@
       - name: Post-process Coverity output
         if: ${{github.event_name == 'pull_request'}}
         shell: bash
-        run: awk '{gsub("/github/workspace", "${GITHU", $0); print}' coverity.json
         run: cat ./coverity-results.json | sed "s|/github/workspace|$GITHUB_WORKSPACE|g" > ./coverity-results-converted.json
 
       - name: Coverity Pull Request Feedback
