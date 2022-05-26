@@ -174,9 +174,11 @@
           if [ "$NUM_NEW_DEFECTS" == "0" ]; then
             echo No new defects found - success
             echo ::save-state name=security_gate_status::success
+            echo "SECURITY_GATE_STATUS=success" >> $GITHUB_ENV
           else
             echo New defects found - failure
             echo ::save-state name=security_gate_status::failure
+            echo "SECURITY_GATE_STATUS=failure" >> $GITHUB_ENV
           fi
 
       #- name: Archive Coverity Intermediate Directory
