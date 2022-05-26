@@ -156,33 +156,23 @@
       # will run a preview commit and check how many newly introduced
       # issues are being reported.
 
-      #- name: Coverity Security Gate (Incremental analysis)
-      #  if: ${{github.event_name == 'pull_request'}}
-      #  shell: bash
-      #  run: |
-      #    echo
-      #    echo ========================================================================================
-      #    echo == Check security gate for local analysis results
-      #    echo ========================================================================================
-      #    echo
-      #    if [ "${{ inputs.coverity-stream-name }}" == "" ]; then
-      #      export COVERITY_STREAM_NAME=${GITHUB_REPOSITORY##*/}-$BASE_BRANCH
-      #    else
-      #      export COVERITY_STREAM_NAME=${{ inputs.coverity-stream-name }}
-      #    fi
-      #    cov-commit-defects --dir idir --url ${{ inputs.coverity-url }} --preview-report-v2 preview-report.json --stream ${COVERITY_STREAM_NAME}
-      #    NUM_NEW_DEFECTS=`cat preview-report.json | jq -re .issueInfo[].presentInComparisonSnapshot | grep false | wc -l || true`
-      #    if [ "$NUM_NEW_DEFECTS" -eq 0 ]; then
-      #      echo No new defects found - success
-      #      echo ::save-state name=security_gate_status::success
-      #    else
-      #      echo New defects found - failure
-      #      echo ::save-state name=security_gate_status::failure
-      #    fi
-      #  env:
-      #    BASE_BRANCH: ${{ github.base_ref }}
-      #    COV_USER: ${{ inputs.coverity-user }}
-      #    COVERITY_PASSPHRASE: ${{ inputs.coverity-passphrase }}
+      - name: Coverity Security Gate (Incremental analysis)
+        if: ${{github.event_name == 'pull_request'}}
+        shell: bash
+        run: |
+          echo
+          echo ========================================================================================
+          echo == Check security gate for local analysis results
+          echo ========================================================================================
+          echo
+          NUM_NEW_DEFECTS=`cat coverity-desktop-defects-count.txt`
+          if [ "$NUM_NEW_DEFECTS" -eq 0 ]; then
+            echo No new defects found - success
+            echo ::save-state name=security_gate_status::success
+          else
+            echo New defects found - failure
+            echo ::save-state name=security_gate_status::failure
+          fi
 
       #- name: Archive Coverity Intermediate Directory
       #  if: ${{ inputs.diagnostic-mode == 'true' }}
