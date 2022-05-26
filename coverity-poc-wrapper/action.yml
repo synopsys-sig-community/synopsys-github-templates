@@ -165,6 +165,8 @@
           echo == Check security gate for local analysis results
           echo ========================================================================================
           echo
+          cat coverity-results.json
+          echo ===========
           NUM_NEW_DEFECTS=`cat coverity-desktop-defects-count.txt`
           if [ "$NUM_NEW_DEFECTS" -eq 0 ]; then
             echo No new defects found - success
