@@ -207,6 +207,9 @@
         if: ${{ github.event_name != 'pull_request' }}
         shell: bash
         run: |
+          if [ "$COVERITY_PATH" != "" ]; then
+            export PATH=$COVERITY_PATH:$PATH
+          fi
           echo
           echo ========================================================================================
           echo == Run FULL Coverity analysis for ${GITHUB_REPOSITORY##*/}-${GITHUB_REF##*/}
@@ -253,6 +256,9 @@
         if: ${{github.event_name == 'pull_request'}}
         shell: bash
         run: |
+          if [ "$COVERITY_PATH" != "" ]; then
+            export PATH=$COVERITY_PATH:$PATH
+          fi
           echo
           echo ========================================================================================
           echo == Run INCREMENTAL Coverity analysis for ${GITHUB_REPOSITORY##*/}-$BASE_BRANCH
@@ -309,6 +315,8 @@
         if: ${{ inputs.generate-sarif == 'true' }}
         shell: bash
         run: |
+          if [ "$COVERITY_PATH" != "" ]; then
+            export PATH=$COVERITY_PATH:$PATH
           echo
           echo ========================================================================================
           echo == Generate SARIF for Coverity results
@@ -364,6 +372,8 @@
         if: ${{github.event_name == 'pull_request'}}
         shell: bash
         run: |
+          if [ "$COVERITY_PATH" != "" ]; then
+            export PATH=$COVERITY_PATH:$PATH
           echo
           echo ========================================================================================
           echo == Check security gate for local analysis results
