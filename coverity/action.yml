@@ -96,14 +96,14 @@
             curl -L $COVERITY_BITS_URL | tar xzf -
           fi
 
-        COVERITY_PATH=`pwd`/cov-analysis-${COVERITY_ARCH}-${{ inputs.coverity-download-version }}/bin
-        echo "COVERITY_PATH='$COVERITY_PATH'" >> $GITHUB_ENV
+          COVERITY_PATH=`pwd`/cov-analysis-${COVERITY_ARCH}-${{ inputs.coverity-download-version }}/bin
+          echo "COVERITY_PATH=$COVERITY_PATH" >> $GITHUB_ENV
 
-        if [ "${{ inputs.coverity-license-creds }}" == "" ]; then
-          curl -L -u "${{ inputs.coverity-license-creds }}" ${{ inputs.coverity-license.url }} > $COVERITY_PATH/license.dat
-        else
-          curl -L ${{ inputs.coverity-license.url }} > $COVERITY_PATH/license.dat
-        fi
+          if [ "${{ inputs.coverity-license-creds }}" == "" ]; then
+            curl -L -u "${{ inputs.coverity-license-creds }}" ${{ inputs.coverity-license.url }} > $COVERITY_PATH/license.dat
+          else
+            curl -L ${{ inputs.coverity-license.url }} > $COVERITY_PATH/license.dat
+          fi
 
       # Initialize a status check to Pending using the third party
       # commit-status-updater action.
