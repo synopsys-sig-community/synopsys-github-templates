@@ -44,10 +44,66 @@
       create-stream-and-project:
         description: "Create stream and project - true or false"
         required: false
+      coverity-download-url:
+        description: "Base URL where to download Coverity bits from"
+        required: false
+      coverity-download-version:
+        description: "Which version of Coverity to download"
+        required: false
+      coverity-download-creds:
+        description: "Credentials used to download Coverity bits"
+        required: false
+      coverity-license-url:
+        description: "Specific URL to download Coverity license from"
+        required: false
+      coverity-license-creds:
+        description: "Credentials used to download Coverity license"
+        required: false
 
     runs:
       using: "composite"
       steps:
+
+      # Download Coverity bits
+      - name: Download Coverity bits
+        if: ${{ inputs.coverity-download-url != '' and inputs.coverity-download-version != ''}}
+        shell: bash
+        run: |
+          echo
+          echo ========================================================================================
+          echo == Download Coverity
+          echo ========================================================================================
+          echo
+
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            COVERITY_ARCH=linux64
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            echo Runner platform $RUNNER_OS not supported
+            exit 1
+          elif [ "$RUNNER_OS" == "Windows" ]; then
+            echo Runner platform $RUNNER_OS not supported
+            exit 1
+          else
+            echo Runner platform $RUNNER_OS not supported
+            exit 1
+          fi
+
+          COVERITY_BITS_URL="${{ inputs.coverity-download-url }}/cov-bits-${COVERITY_ARCH}-${{ inputs.coverity-download-version }}"
+
+          if [ "${{ inputs.coverity-download-creds }}" == "" ]; then
+            curl -L -u "${{ inputs.coverity-download-creds }}" $COVERITY_BITS_URL | tar xzf -
+          else
+            curl -L $COVERITY_BITS_URL | tar xzf -
+          fi
+
+        COVERITY_PATH=`pwd`/cov-analysis-${COVERITY_ARCH}-${{ inputs.coverity-download-version }}/bin
+        echo "COVERITY_PATH=$COVERITY_PATH" >> $GITHUB_ENV
+
+        if [ "${{ inputs.coverity-license-creds }}" == "" ]; then
+          curl -L -u "${{ inputs.coverity-license-creds }}" ${{ inputs.coverity-license.url }} > $COVERITY_PATH/license.dat
+        else
+          curl -L ${{ inputs.coverity-license.url }} > $COVERITY_PATH/license.dat
+        fi
 
       # Initialize a status check to Pending using the third party
       # commit-status-updater action.
@@ -78,6 +134,9 @@
         shell: bash
         run: |
           if [ "${{ inputs.create-stream-and-project }}" == "true" ]; then
+            if [ "$COVERITY_PATH" != "" ]; then
+              export PATH=$COVERITY_PATH:$PATH
+            fi
             echo
             echo ========================================================================================
             echo == Initialize Coverity project and stream
@@ -109,6 +168,9 @@
       - name: Coverity Capture
         shell: bash
         run: |
+          if [ "$COVERITY_PATH" != "" ]; then
+            export PATH=$COVERITY_PATH:$PATH
+          fi
           if [ "${{ inputs.build-command }}" == "" ]; then
             echo
             echo ========================================================================================
