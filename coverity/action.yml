@@ -97,9 +97,9 @@
           echo Download Coverity from $COVERITY_BITS_URL
 
           if [ "${{ inputs.coverity-download-creds }}" == "" ]; then
-            curl -L -u "${{ inputs.coverity-download-creds }}" $COVERITY_BITS_URL | tar --warning=no-unknown-keyword xzf -
+            curl -L -u "${{ inputs.coverity-download-creds }}" $COVERITY_BITS_URL | tar --warning=no-unknown-keyword -xzf -
           else
-            curl -L $COVERITY_BITS_URL | tar --warning=no-unknown-keyword xzf -
+            curl -L $COVERITY_BITS_URL | tar --warning=no-unknown-keyword -xzf -
           fi
 
           COVERITY_PATH=`pwd`/cov-analysis-${COVERITY_ARCH}-${{ inputs.coverity-download-version }}/bin
