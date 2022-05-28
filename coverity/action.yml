@@ -88,7 +88,8 @@
             exit 1
           fi
 
-          COVERITY_BITS_URL="${{ inputs.coverity-download-url }}/cov-bits-${COVERITY_ARCH}-${{ inputs.coverity-download-version }}"
+          COVERITY_BITS_URL="${{ inputs.coverity-download-url }}/cov-analysis-${COVERITY_ARCH}-${{ inputs.coverity-download-version }}-poc-nolicense.tgz"
+          echo Download Coverity from $COVERITY_BITS_URL
 
           if [ "${{ inputs.coverity-download-creds }}" == "" ]; then
             curl -L -u "${{ inputs.coverity-download-creds }}" $COVERITY_BITS_URL | tar xzf -
