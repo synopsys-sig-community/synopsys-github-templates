@@ -97,12 +97,12 @@
           echo Download Coverity from $COVERITY_BITS_URL
 
           if [ "${{ inputs.coverity-download-creds }}" != "" ]; then
-            time curl -L -u "${{ inputs.coverity-download-creds }}" $COVERITY_BITS_URL | tar --warning=no-unknown-keyword -xzf -
+            time (cd ..; curl -L -u "${{ inputs.coverity-download-creds }}" $COVERITY_BITS_URL | tar --warning=no-unknown-keyword -xzf -)
           else
-            time curl -L $COVERITY_BITS_URL | tar --warning=no-unknown-keyword -xzf -
+            time (cd ..; curl -L $COVERITY_BITS_URL | tar --warning=no-unknown-keyword -xzf -)
           fi
 
-          COVERITY_PATH=`pwd`/cov-analysis-${COVERITY_ARCH}-${{ inputs.coverity-download-version }}/bin
+          COVERITY_PATH=`pwd`/../cov-analysis-${COVERITY_ARCH}-${{ inputs.coverity-download-version }}/bin
           echo "COVERITY_PATH=$COVERITY_PATH" >> $GITHUB_ENV
 
           if [ "${{ inputs.coverity-license-creds }}" != "" ]; then
@@ -224,8 +224,9 @@
           fi
           # JC Test analysis performance
           #( cmdpid=$BASHPID; (sleep 1800; kill $cmdpid) & exec cov-analyze --dir idir --jobs max4 --max-mem 512 --strip-path `pwd` ${{ inputs.coverity-checker-options }} ${{ inputs.cov-analyze-options }} ) || true
-          ( cmdpid=$BASHPID; (sleep 1800; kill $cmdpid) & exec cov-analyze --dir idir --jobs 1 --strip-path `pwd` ${{ inputs.coverity-checker-options }} ${{ inputs.cov-analyze-options }} ) || true
-          #cov-analyze --dir idir --strip-path `pwd` ${{ inputs.coverity-checker-options }} ${{ inputs.cov-analyze-options }}
+          #( cmdpid=$BASHPID; (sleep 1800; kill $cmdpid) & exec cov-analyze --dir idir --jobs 1 --strip-path `pwd` ${{ inputs.coverity-checker-options }} ${{ inputs.cov-analyze-options }} ) || true
+          #( cmdpid=$BASHPID; (sleep 900; kill $cmdpid) & exec cov-analyze --dir idir --strip-path `pwd` ${{ inputs.coverity-checker-options }} ${{ inputs.cov-analyze-options }} ) || true
+          cov-analyze --dir idir --strip-path `pwd` ${{ inputs.coverity-checker-options }} ${{ inputs.cov-analyze-options }}
           cat idir/output/analysis-log.txt
           cov-commit-defects --dir idir --ticker-mode none --url ${{ inputs.coverity-url }} --on-new-cert trust --stream \
               $COVERITY_STREAM_NAME --scm git --description "GitHub Workflow $GITHUB_WORKFLOW for $GITHUB_REPO" --version $GITHUB_SHA
