@@ -66,7 +66,7 @@
 
       # Download Coverity bits
       - name: Download Coverity bits
-        if: ${{ inputs.coverity-download-url != '' }} and ${{ inputs.coverity-download-version != ''}}
+        if: ${{ inputs.coverity-download-url != '' }}
         shell: bash
         run: |
           echo
