@@ -96,7 +96,7 @@
           COVERITY_BITS_URL="${{ inputs.coverity-download-url }}/cov-analysis-${COVERITY_ARCH}-${{ inputs.coverity-download-version }}-poc-nolicense.tgz"
           echo Download Coverity from $COVERITY_BITS_URL
 
-          if [ "${{ inputs.coverity-download-creds }}" == "" ]; then
+          if [ "${{ inputs.coverity-download-creds }}" != "" ]; then
             time curl -L -u "${{ inputs.coverity-download-creds }}" $COVERITY_BITS_URL | tar --warning=no-unknown-keyword -xzf -
           else
             time curl -L $COVERITY_BITS_URL | tar --warning=no-unknown-keyword -xzf -
@@ -105,7 +105,7 @@
           COVERITY_PATH=`pwd`/cov-analysis-${COVERITY_ARCH}-${{ inputs.coverity-download-version }}/bin
           echo "COVERITY_PATH=$COVERITY_PATH" >> $GITHUB_ENV
 
-          if [ "${{ inputs.coverity-license-creds }}" == "" ]; then
+          if [ "${{ inputs.coverity-license-creds }}" != "" ]; then
             curl -L -u "${{ inputs.coverity-license-creds }}" ${{ inputs.coverity-license-url }} > $COVERITY_PATH/license.dat
           else
             curl -L ${{ inputs.coverity-license-url }} > $COVERITY_PATH/license.dat
