@@ -222,7 +222,10 @@
           else
             export COVERITY_STREAM_NAME=${{ inputs.coverity-stream-name }}
           fi
-          cov-analyze --dir idir --strip-path `pwd` ${{ inputs.coverity-checker-options }} ${{ inputs.cov-analyze-options }}
+          # JC Test analysis performance
+          ( cmdpid=$BASHPID; (sleep 60; kill $cmdpid) & exec cov-analyze --dir idir --strip-path `pwd` ${{ inputs.coverity-checker-options }} ${{ inputs.cov-analyze-options }} )
+          #cov-analyze --dir idir --strip-path `pwd` ${{ inputs.coverity-checker-options }} ${{ inputs.cov-analyze-options }}
+          cat idir/output/analysis-log.txt
           cov-commit-defects --dir idir --ticker-mode none --url ${{ inputs.coverity-url }} --on-new-cert trust --stream \
               $COVERITY_STREAM_NAME --scm git --description "GitHub Workflow $GITHUB_WORKFLOW for $GITHUB_REPO" --version $GITHUB_SHA
           cov-format-errors --dir idir --json-output-v7 coverity-results.json
