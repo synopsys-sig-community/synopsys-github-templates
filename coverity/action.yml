@@ -59,6 +59,10 @@
       coverity-license-creds:
         description: "Credentials used to download Coverity license"
         required: false
+      coverity-languages:
+        description: "Languages to cov-configure"
+        required: false
+        default: java javascript jsp jsx kotlin msvc apex clang cs cuda gcc go html nvcc php python ruby scala typescript vb vue
 
     runs:
       using: "composite"
@@ -111,7 +115,11 @@
             curl -L ${{ inputs.coverity-license-url }} > $COVERITY_PATH/license.dat
           fi
           ls -l $COVERITY_PATH/license.dat
-          cat $COVERITY_PATH/license.dat
+
+          echo Configure languages "${{ inputs.coverity-languages }}"
+          for language in "${{ inputs.coverity-languages }}"; do
+            $COVERITY_PATH/cov-configure --${language}
+          done
 
       # Initialize a status check to Pending using the third party
       # commit-status-updater action.
