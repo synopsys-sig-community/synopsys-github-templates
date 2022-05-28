@@ -75,6 +75,11 @@
           echo ========================================================================================
           echo
 
+          if [ "${{ inputs.coverity-download-version }}" == "" ]; then
+            echo Please specify Coverity download version
+            exit 1
+          fi
+
           if [ "$RUNNER_OS" == "Linux" ]; then
             COVERITY_ARCH=linux64
           elif [ "$RUNNER_OS" == "macOS" ]; then
