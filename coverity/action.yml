@@ -96,11 +96,10 @@
           COVERITY_BITS_URL="${{ inputs.coverity-download-url }}/cov-analysis-${COVERITY_ARCH}-${{ inputs.coverity-download-version }}-poc-nolicense.tgz"
           echo Download Coverity from $COVERITY_BITS_URL
 
-          # TODO: Remove stderr pipe to /dev/null when package is fixed
           if [ "${{ inputs.coverity-download-creds }}" == "" ]; then
-            curl -L -u "${{ inputs.coverity-download-creds }}" $COVERITY_BITS_URL 2> /dev/null | tar xzf -
+            curl -L -u "${{ inputs.coverity-download-creds }}" $COVERITY_BITS_URL | tar --warning=no-unknown-keyword xzf -
           else
-            curl -L $COVERITY_BITS_URL 2> /dev/null | tar xzf -
+            curl -L $COVERITY_BITS_URL | tar --warning=no-unknown-keyword xzf -
           fi
 
           COVERITY_PATH=`pwd`/cov-analysis-${COVERITY_ARCH}-${{ inputs.coverity-download-version }}/bin
