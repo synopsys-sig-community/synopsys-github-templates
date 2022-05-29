@@ -116,8 +116,9 @@
           fi
           ls -l $COVERITY_PATH/license.dat
 
-          echo Configure languages "${{ inputs.coverity-languages }}"
-          for language in "${{ inputs.coverity-languages }}"; do
+          echo Configure languages ${{ inputs.coverity-languages }}
+          for language in ${{ inputs.coverity-languages }}; do
+            echo Configure language $language
             $COVERITY_PATH/cov-configure --${language}
           done
 
@@ -399,9 +400,11 @@
           if [ "$NUM_NEW_DEFECTS" -eq 0 ]; then
             echo No new defects found - success
             echo ::save-state name=security_gate_status::success
+            echo "SECURITY_GATE_STATUS=success" >> $GITHUB_ENV
           else
             echo New defects found - failure
             echo ::save-state name=security_gate_status::failure
+            echo "SECURITY_GATE_STATUS=failure" >> $GITHUB_ENV
           fi
         env:
           BASE_BRANCH: ${{ github.base_ref }}
