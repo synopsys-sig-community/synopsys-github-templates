@@ -100,7 +100,7 @@
           fi
 
           # If creds is a GitHub token, attempt to download for a POC
-          if [ "${{ inputs.coverity-download-creds }}" == ghp_* ]; then
+          if [ "${{ inputs.coverity-download-creds }}" == "ghp_*" ]; then
             unset GITHUB_TOKEN
             echo "${{ inputs.coverity-download-creds }}" | gh auth login --with-token
             echo Download synopsys-github-bits release from GitHub
