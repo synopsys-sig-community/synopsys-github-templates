@@ -87,9 +87,11 @@
           if [ "$RUNNER_OS" == "Linux" ]; then
             COVERITY_ARCH=linux64
           elif [ "$RUNNER_OS" == "macOS" ]; then
+            COVERITY_ARCH=macosx
             echo Runner platform $RUNNER_OS not supported
             exit 1
           elif [ "$RUNNER_OS" == "Windows" ]; then
+            COVERITY_ARCH=win64
             echo Runner platform $RUNNER_OS not supported
             exit 1
           else
@@ -97,13 +99,22 @@
             exit 1
           fi
 
-          COVERITY_BITS_URL="${{ inputs.coverity-download-url }}/cov-analysis-${COVERITY_ARCH}-${{ inputs.coverity-download-version }}-poc-nolicense.tgz"
-          echo Download Coverity from $COVERITY_BITS_URL
-
-          if [ "${{ inputs.coverity-download-creds }}" != "" ]; then
-            time (cd ..; curl -L -u "${{ inputs.coverity-download-creds }}" $COVERITY_BITS_URL | tar --warning=no-unknown-keyword -xzf -)
+          # If creds is a GitHub token, attempt to download for a POC
+          if [ "${{ inputs.coverity-download-creds }}" == ghp_* ]; then
+            unset GITHUB_TOKEN
+            echo "${{ inputs.coverity-download-creds }}" | gh auth login --with-token
+            echo Download synopsys-github-bits release from GitHub
+            time gh release download -D .. --repo synopsys-sig-community/synopsys-github-bits coverity-v${{ inputs.coverity-download-version }}-${COVERITY_ARCH}
+            (cd ..; tar --warning=no-unknown-keyword -xzf cov-analysis-${COVERITY_ARCH}-${{ inputs.coverity-download-version }}-ci.tgz
           else
-            time (cd ..; curl -L $COVERITY_BITS_URL | tar --warning=no-unknown-keyword -xzf -)
+            COVERITY_BITS_URL="${{ inputs.coverity-download-url }}/cov-analysis-${COVERITY_ARCH}-${{ inputs.coverity-download-version }}.tgz"
+            echo Download Coverity from $COVERITY_BITS_URL
+
+            if [ "${{ inputs.coverity-download-creds }}" != "" ]; then
+              time (cd ..; curl -L -u "${{ inputs.coverity-download-creds }}" $COVERITY_BITS_URL | tar --warning=no-unknown-keyword -xzf -)
+            else
+              time (cd ..; curl -L $COVERITY_BITS_URL | tar --warning=no-unknown-keyword -xzf -)
+            fi
           fi
 
           COVERITY_PATH=`pwd`/../cov-analysis-${COVERITY_ARCH}-${{ inputs.coverity-download-version }}/bin
