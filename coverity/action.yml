@@ -105,7 +105,7 @@
             echo "${{ inputs.coverity-download-creds }}" | gh auth login --with-token
             echo Download synopsys-github-bits release from GitHub
             time gh release download -D .. --repo synopsys-sig-community/synopsys-github-bits coverity-v${{ inputs.coverity-download-version }}-${COVERITY_ARCH}
-            (cd ..; tar --warning=no-unknown-keyword -xzf cov-analysis-${COVERITY_ARCH}-${{ inputs.coverity-download-version }}-ci.tgz
+            (cd ..; tar --warning=no-unknown-keyword -xzf cov-analysis-${COVERITY_ARCH}-${{ inputs.coverity-download-version }}-ci.tgz)
           else
             COVERITY_BITS_URL="${{ inputs.coverity-download-url }}/cov-analysis-${COVERITY_ARCH}-${{ inputs.coverity-download-version }}.tgz"
             echo Download Coverity from $COVERITY_BITS_URL
