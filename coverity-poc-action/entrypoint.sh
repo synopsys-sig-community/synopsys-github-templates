@@ -1,54 +1,65 @@
-#!/bin/sh
+#!/bin/bash -x
 
-export PATH=~/cov-analysis-linux64/bin:$PATH
-
-INPUTS_DEBUG=$1
+INPUTS_DEBUG=${1}
 echo INPUTS_DEBUG: $INPUTS_DEBUG
-INPUTS_COVERITY_URL=$2
+INPUTS_COVERITY_URL=${2}
 echo INPUTS_COVERITY_URL: $INPUTS_COVERITY_URL
-INPUTS_COVERITY_USER=$3
+INPUTS_COVERITY_USER=${3}
 echo INPUTS_COVERITY_USER: $INPUTS_COVERITY_USER
-INPUTS_COVERITY_PASSPHRASE=$4
+INPUTS_COVERITY_PASSPHRASE=${4}
 echo INPUTS_COVERITY_PASSPHRASE: $INPUTS_COVERITY_PASSPHRASE
-INPUTS_BUILD_COMMAND=$5
+INPUTS_BUILD_COMMAND=${5}
 echo INPUTS_BUILD_COMMAND: $INPUTS_BUILD_COMMAND
-INPUTS_COV_BUILD_OPTIONS=$6
+INPUTS_COV_BUILD_OPTIONS=${6}
 echo INPUTS_COV_BUILD_OPTIONS: $INPUTS_COV_BUILD_OPTIONS
-INPUTS_COV_ANALYZE_OPTIONS=$7
+INPUTS_COV_ANALYZE_OPTIONS=${7}
 echo INPUTS_COV_ANALYZE_OPTIONS: $INPUTS_COV_ANALYZE_OPTIONS
-INPUTS_SECURITY_GATE_VIEW_NAME=$8
+INPUTS_SECURITY_GATE_VIEW_NAME=${8}
 echo INPUTS_SECURITY_GATE_VIEW_NAME: $INPUTS_SECURITY_GATE_VIEW_NAME
-INPUTS_COVERITY_CHECKER_OPTIONS=$9
+INPUTS_COVERITY_CHECKER_OPTIONS=${9}
 echo INPUTS_COVERITY_CHECKER_OPTIONS: $INPUTS_COVERITY_CHECKER_OPTIONS
-INPUTS_COVERITY_STREAM_NAME=$10
+INPUTS_COVERITY_STREAM_NAME=${10}
 echo INPUTS_COVERITY_STREAM_NAME: $INPUTS_COVERITY_STREAM_NAME
-INPUTS_COVERITY_PROJECT_NAME=$11
+INPUTS_COVERITY_PROJECT_NAME=${11}
 echo INPUTS_COVERITY_PROJECT_NAME: $INPUTS_COVERITY_PROJECT_NAME
-INPUTS_GENERATE_SARIF=$12
+INPUTS_GENERATE_SARIF=${12}
 echo INPUTS_GENERATE_SARIF: $INPUTS_GENERATE_SARIF
-INPUTS_GITHUB_TOKEN=$13
+INPUTS_GITHUB_TOKEN=${13}
 echo INPUTS_GITHUB_TOKEN: $INPUTS_GITHUB_TOKEN
-INPUTS_DIAGNOSTIC_MODE=$14
+INPUTS_DIAGNOSTIC_MODE=${14}
 echo INPUTS_DIAGNOSTIC_MODE: $INPUTS_DIAGNOSTIC_MODE
-INPUTS_CREATE_STREAM_AND_PROJECT=$15
+INPUTS_CREATE_STREAM_AND_PROJECT=${15}
 echo INPUTS_CREATE_STREAM_AND_PROJECT: $INPUTS_CREATE_STREAM_AND_PROJECT
+INPUTS_COVERITY_LICENSE=${16}
+echo INPUTS_COVERITY_LICENSE: $INPUTS_COVERITY_LICENSE
 
 export COV_USER=$INPUTS_COVERITY_USER
 export COVERITY_PASSPHRASE=$INPUTS_COVERITY_PASSPHRASE
 
-if [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
-  if [ "$INPUTS_CREATE_STREAM_AND_PROJECT }}" == "true" ]; then
+export PATH=/home/coverity/cov-analysis-linux64/bin:$PATH
+
+echo ========================================================================================
+echo == Coverity License
+echo ========================================================================================
+
+# TODO: Debug Coverity License secret issue, in the meantime this is un-reachable without the password
+COVERITY_LICENSE="https://thirteen.community/private/license.dat"
+curl -u "$COV_USER":"$COVERITY_PASSPHRASE" "$COVERITY_LICENSE" > coverity-license.dat
+ls -l coverity-license.dat
+
+if [[ "$GITHUB_EVENT_NAME" != "pull_request" ]]; then
+  if [[ "$INPUTS_CREATE_STREAM_AND_PROJECT" == "true" ]]; then
     echo
     echo ========================================================================================
     echo == Initialize Coverity project and stream
     echo ========================================================================================
     echo
-    if [ "$INPUTS_COVERITY_STREAM_NAME" == "" ]; then
+    if [[ "$INPUTS_COVERITY_STREAM_NAME" == "" ]]; then
       export COVERITY_STREAM_NAME=${GITHUB_REPOSITORY##*/}-${GITHUB_REF##*/}
     else
       export COVERITY_STREAM_NAME=$INPUTS_COVERITY_STREAM_NAME
     fi
-    if [ "$INPUTS_COVERITY_PROJECT_NAME" == "" ]; then
+    if [[ "$INPUTS_COVERITY_PROJECT_NAME" == "" ]]; then
       export COVERITY_PROJECT_NAME=${GITHUB_REPOSITORY##*/}
     else
       export COVERITY_PROJECT_NAME=$INPUTS_COVERITY_PROJECT_NAME
@@ -64,7 +75,7 @@ fi
 # Always run either a full build or auto-capture. A partial capture is possible for incremental analysis,
 # but this will impact the results further. For C/C++ and large Java projects however this may be required
 # and is left as an exercise to the reader.
-if [ "$INPUTS_BUILD_COMMAND" == "" ]; then
+if [[ "$INPUTS_BUILD_COMMAND" == "" ]]; then
   echo
   echo ========================================================================================
   echo == Run Coverity AUTO Capture
@@ -90,21 +101,22 @@ fi
 # Results will be saved into coverity-full-results.json for
 # potential processing.
 
-if [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
+if [[ "$GITHUB_EVENT_NAME" != "pull_request" ]]; then
   echo
   echo ========================================================================================
   echo == Run FULL Coverity analysis for ${GITHUB_REPOSITORY##*/}-${GITHUB_REF##*/}
   echo ========================================================================================
   echo
-  if [ "$INPUTS_COVERITY_STREAM_NAME" == "" ]; then
+  if [[ "$INPUTS_COVERITY_STREAM_NAME" == "" ]]; then
     export COVERITY_STREAM_NAME=${GITHUB_REPOSITORY##*/}-${GITHUB_REF##*/}
   else
     export COVERITY_STREAM_NAME=$INPUTS_COVERITY_STREAM_NAME
   fi
-  cov-analyze --dir idir --strip-path `pwd` $INPUTS_COVERITY_CHECKER_OPTIONS $INPUTS_COV_ANALYZE_OPTIONS
+  cov-analyze --dir idir --strip-path `pwd` --security-file coverity-license.dat $INPUTS_COVERITY_CHECKER_OPTIONS $INPUTS_COV_ANALYZE_OPTIONS
   cov-commit-defects --dir idir --ticker-mode none --url $INPUTS_COVERITY_URL --on-new-cert trust --stream \
-    $COVERITY_STREAM_NAME --scm git --description "GitHub Workflow $GITHUB_WORKFLOW for $GITHUB_REPO" --version $GITHUB_SHA
-  cov-format-errors --dir idir --json-output-v7 coverity-results.json
+    $COVERITY_STREAM_NAME --scm git --description "GitHub Workflow $GITHUB_WORKFLOW for $GITHUB_REPO" --version $GITHUB_SHA \
+    --security-file coverity-license.dat
+  cov-format-errors --dir idir --security-file coverity-license.dat --json-output-v7 coverity-results.json
 fi
 
 # On a pull request, run an incremental analysis. This uses auto
@@ -123,7 +135,7 @@ fi
 #
 # Results are saved into coverity-results.json.
 
-if [ "$GITHUB_EVENT_NAME" == "pull_request" ]; then
+if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
   export BASE_BRANCH=$GITHUB_BASE_REF
 
   echo
@@ -131,28 +143,33 @@ if [ "$GITHUB_EVENT_NAME" == "pull_request" ]; then
   echo == Run INCREMENTAL Coverity analysis for ${GITHUB_REPOSITORY##*/}-$BASE_BRANCH
   echo ========================================================================================
   echo
-  if [ "$INPUTS_COVERITY_STREAM_NAME" == "" ]; then
+  if [[ "$INPUTS_COVERITY_STREAM_NAME" == "" ]]; then
     export COVERITY_STREAM_NAME=${GITHUB_REPOSITORY##*/}-$BASE_BRANCH
   else
     export COVERITY_STREAM_NAME=$INPUTS_COVERITY_STREAM_NAME
   fi
 
-  git --no-pager diff origin/$GITHUB_BASE_REF --name-only > coverity-files-to-scan.txt
+  # JC: Use the wrapper's call to coverity-files-to-scan.txt instead
+  #git --no-pager diff origin/$GITHUB_BASE_REF --name-only > coverity-files-to-scan.txt
   echo Scanning changed files:
   cat coverity-files-to-scan.txt
 
-  cov-run-desktop --dir idir --strip-path `pwd` --url $INPUTS_COVERITY_URL --stream $COVERITY_STREAM_NAME --present-in-reference false \
+  cov-run-desktop --dir idir --strip-path `pwd` --url $INPUTS_COVERITY_URL \
+    --stream $COVERITY_STREAM_NAME --present-in-reference false \
     --ignore-uncapturable-inputs true \
     --json-output-v7 coverity-results.json \
+    --security-file coverity-license.dat \
     $INPUTS_COV_ANALYZE_OPTIONS \
     @@coverity-files-to-scan.txt
 
-  cov-commit-defects --dir idir --url ${{ inputs.coverity-url }} --preview-report-v2 preview-report.json --stream                ${COVERITY_STREAM_NAME}
+  cov-commit-defects --dir idir --url $INPUTS_COVERITY_URL --preview-report-v2 preview-report.json \
+    --stream ${COVERITY_STREAM_NAME} \
+    --security-file coverity-license.dat
   NUM_NEW_DEFECTS=`cat preview-report.json | jq -re .issueInfo[].presentInComparisonSnapshot | grep false | wc -l || true`
   echo $NUM_NEW_DEFECTS > coverity-desktop-defects-count.txt
 fi
 
-if [ "$INPUTS_GENERATE_SARIF" == "true" ]; then
+if [[ "$INPUTS_GENERATE_SARIF" == "true" ]]; then
   echo
   echo ========================================================================================
   echo == Generate SARIF for Coverity results

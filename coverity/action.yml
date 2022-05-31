@@ -44,10 +44,99 @@
       create-stream-and-project:
         description: "Create stream and project - true or false"
         required: false
+      coverity-download-url:
+        description: "Base URL where to download Coverity bits from"
+        required: false
+      coverity-download-version:
+        description: "Which version of Coverity to download"
+        required: false
+      coverity-download-creds:
+        description: "Credentials used to download Coverity bits"
+        required: false
+      coverity-license-url:
+        description: "Specific URL to download Coverity license from"
+        required: false
+      coverity-license-creds:
+        description: "Credentials used to download Coverity license"
+        required: false
+      coverity-languages:
+        description: "Languages to cov-configure"
+        required: false
+        default: java javascript jsp jsx kotlin msvc apex clang cs cuda gcc go html nvcc php python ruby scala typescript vb vue
 
     runs:
       using: "composite"
       steps:
+
+      # Download Coverity bits
+      - name: Download Coverity bits
+        if: ${{ inputs.coverity-download-url != '' }}
+        shell: bash
+        run: |
+          echo
+          echo ========================================================================================
+          echo == Download Coverity
+          echo ========================================================================================
+          echo
+
+          if [ "${{ inputs.coverity-download-version }}" == "" ]; then
+            echo Please specify Coverity download version
+            exit 1
+          fi
+
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            COVERITY_ARCH=linux64
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            COVERITY_ARCH=macosx
+            echo Runner platform $RUNNER_OS not supported
+            exit 1
+          elif [ "$RUNNER_OS" == "Windows" ]; then
+            COVERITY_ARCH=win64
+            echo Runner platform $RUNNER_OS not supported
+            exit 1
+          else
+            echo Runner platform $RUNNER_OS not supported
+            exit 1
+          fi
+
+          # If creds is a GitHub token, attempt to download for a POC
+          echo Creds = ${{ inputs.coverity-download-creds }}
+          if [[ "${{ inputs.coverity-download-creds }}" =~ ^ghp_ ]]; then
+            unset GITHUB_TOKEN
+            echo "${{ inputs.coverity-download-creds }}" | gh auth login --with-token
+            echo Download synopsys-github-bits release from GitHub
+            echo gh release download -D .. --repo "${{ inputs.coverity-download-url }}" coverity-v${{ inputs.coverity-download-version }}-${COVERITY_ARCH}
+            time gh release download -D .. --repo "${{ inputs.coverity-download-url }}" coverity-v${{ inputs.coverity-download-version }}-${COVERITY_ARCH}
+            (cd ..; tar --warning=no-unknown-keyword -xzf cov-analysis-${COVERITY_ARCH}-${{ inputs.coverity-download-version }}-ci.tgz)
+          else
+            COVERITY_BITS_URL="${{ inputs.coverity-download-url }}/cov-analysis-${COVERITY_ARCH}-${{ inputs.coverity-download-version }}.tgz"
+            echo Download Coverity from $COVERITY_BITS_URL
+
+            if [ "${{ inputs.coverity-download-creds }}" != "" ]; then
+              time (cd ..; curl -L -u "${{ inputs.coverity-download-creds }}" $COVERITY_BITS_URL | tar --warning=no-unknown-keyword -xzf -)
+            else
+              time (cd ..; curl -L $COVERITY_BITS_URL | tar --warning=no-unknown-keyword -xzf -)
+            fi
+          fi
+
+          COVERITY_PATH=`pwd`/../cov-analysis-${COVERITY_ARCH}-${{ inputs.coverity-download-version }}/bin
+          echo "COVERITY_PATH=$COVERITY_PATH" >> $GITHUB_ENV
+
+          if [ "${{ inputs.coverity-license-creds }}" != "" ]; then
+            echo exec curl -L -u "${{ inputs.coverity-license-creds }}" ${{ inputs.coverity-license-url }}
+            curl -L -u "${{ inputs.coverity-license-creds }}" ${{ inputs.coverity-license-url }} > $COVERITY_PATH/license.dat
+            cat $COVERITY_PATH/license.dat
+          else
+            curl -L ${{ inputs.coverity-license-url }} > $COVERITY_PATH/license.dat
+            cat $COVERITY_PATH/license.dat
+          fi
+          ls -l $COVERITY_PATH/license.dat
+
+          echo Configure languages ${{ inputs.coverity-languages }}
+          for language in ${{ inputs.coverity-languages }}; do
+            echo Configure language $language
+            $COVERITY_PATH/cov-configure --${language}
+          done
 
       # Initialize a status check to Pending using the third party
       # commit-status-updater action.
@@ -78,6 +167,9 @@
         shell: bash
         run: |
           if [ "${{ inputs.create-stream-and-project }}" == "true" ]; then
+            if [ "$COVERITY_PATH" != "" ]; then
+              export PATH=$COVERITY_PATH:$PATH
+            fi
             echo
             echo ========================================================================================
             echo == Initialize Coverity project and stream
@@ -109,6 +201,9 @@
       - name: Coverity Capture
         shell: bash
         run: |
+          if [ "$COVERITY_PATH" != "" ]; then
+            export PATH=$COVERITY_PATH:$PATH
+          fi
           if [ "${{ inputs.build-command }}" == "" ]; then
             echo
             echo ========================================================================================
@@ -139,6 +234,9 @@
         if: ${{ github.event_name != 'pull_request' }}
         shell: bash
         run: |
+          if [ "$COVERITY_PATH" != "" ]; then
+            export PATH=$COVERITY_PATH:$PATH
+          fi
           echo
           echo ========================================================================================
           echo == Run FULL Coverity analysis for ${GITHUB_REPOSITORY##*/}-${GITHUB_REF##*/}
@@ -149,7 +247,7 @@
           else
             export COVERITY_STREAM_NAME=${{ inputs.coverity-stream-name }}
           fi
-          cov-analyze --dir idir --strip-path `pwd` ${{ inputs.coverity-checker-options }} ${{ inputs.cov-analyze-options }}
+          cov-analyze --dir idir --ticker-mode no-spin --strip-path `pwd` ${{ inputs.coverity-checker-options }} ${{ inputs.cov-analyze-options }}
           cov-commit-defects --dir idir --ticker-mode none --url ${{ inputs.coverity-url }} --on-new-cert trust --stream \
               $COVERITY_STREAM_NAME --scm git --description "GitHub Workflow $GITHUB_WORKFLOW for $GITHUB_REPO" --version $GITHUB_SHA
           cov-format-errors --dir idir --json-output-v7 coverity-results.json
@@ -185,6 +283,9 @@
         if: ${{github.event_name == 'pull_request'}}
         shell: bash
         run: |
+          if [ "$COVERITY_PATH" != "" ]; then
+            export PATH=$COVERITY_PATH:$PATH
+          fi
           echo
           echo ========================================================================================
           echo == Run INCREMENTAL Coverity analysis for ${GITHUB_REPOSITORY##*/}-$BASE_BRANCH
@@ -241,6 +342,8 @@
         if: ${{ inputs.generate-sarif == 'true' }}
         shell: bash
         run: |
+          if [ "$COVERITY_PATH" != "" ]; then
+            export PATH=$COVERITY_PATH:$PATH
           echo
           echo ========================================================================================
           echo == Generate SARIF for Coverity results
@@ -296,6 +399,8 @@
         if: ${{github.event_name == 'pull_request'}}
         shell: bash
         run: |
+          if [ "$COVERITY_PATH" != "" ]; then
+            export PATH=$COVERITY_PATH:$PATH
           echo
           echo ========================================================================================
           echo == Check security gate for local analysis results
@@ -311,9 +416,11 @@
           if [ "$NUM_NEW_DEFECTS" -eq 0 ]; then
             echo No new defects found - success
             echo ::save-state name=security_gate_status::success
+            echo "SECURITY_GATE_STATUS=success" >> $GITHUB_ENV
           else
             echo New defects found - failure
             echo ::save-state name=security_gate_status::failure
+            echo "SECURITY_GATE_STATUS=failure" >> $GITHUB_ENV
           fi
         env:
           BASE_BRANCH: ${{ github.base_ref }}
