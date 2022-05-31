@@ -1,5 +1,7 @@
 # Coverity GitHub Template
 
+![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/synopsys-sig-community/synopsys-github-templates?color=blue&label=Latest%20Version&sort=semver)
+
 The Coverity GitHub Template provides a fully functioning reference implementation of Coverity running within a GitHub
 workflow, implemented as a fully documented composite GitHub Action. This means that you can use this template as an 
 Action to easily implement it in your workflows, but because it contains only GitHub configuration as code, you can
