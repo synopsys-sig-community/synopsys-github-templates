@@ -365,12 +365,12 @@
           sarif_file: synopsys-coverity-github-sarif.json
 
       - name: Coverity Security Gate (Full analysis)
-        if: ${{ github.event_name != 'pull_request' }} and ${{ inputs.security-gate-view-name }} != ''
+        if: ${{ github.event_name != 'pull_request' and inputs.security-gate-view-name != '' }}
         shell: bash
         run: |
           echo
           echo ========================================================================================
-          echo == Check security gate for project ${GITHUB_REPOSITORY##*/}: $SECURITY_GATE_VIEW
+          echo == Check security gate for project ${GITHUB_REPOSITORY##*/}: ${{ inputs.security-gate-view-name }}
           echo ========================================================================================
           echo
           if [ "${{ inputs.coverity-project-name }}" == "" ]; then
