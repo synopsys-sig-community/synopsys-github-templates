@@ -4,16 +4,12 @@ ENV GITHUB_PAT ""
 ENV GITHUB_TOKEN ""
 ENV GITHUB_OWNER ""
 ENV GITHUB_REPOSITORY ""
-ENV RUNNER_WORKDIR "_work"
-ENV RUNNER_LABELS "coverity"
 ENV COVERITY_VERSION=2021.12.1
 ENV COVERITY_LICENSE ""
 
 RUN apt-get update \
-  && apt-get install -y openjdk-8-jdk python3 python3-pip \
+  && apt-get install -y openjdk-11-jdk python3 python3-pip \
   && apt-get install -y curl unzip git jq sudo \
-  && useradd -m runner \
-  && usermod -aG sudo runner \
   && echo "%sudo ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # Need Node.js for Coverity SARIF generator

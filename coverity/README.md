@@ -51,6 +51,24 @@ recommend using a self-hosted runner. A separate template will be made available
 
 The Coverity GitHub Template supports the following capabilities:
 
+### Download Coverity Local Analysis Kit
+
+By default this template assumes that the Coverity local analysis kit (e.g. cov-analysis-${platform}-${version}) is
+in the PATH. In order to download the analysis kit on the fly, please specify the following options:
+
+
+| Option | Description |
+| --- | --- |
+| **coverity-download-url** | Base URL from which to download the Coverity local analysis kit. The download will look for:<br><br>`cov-analysis-${platform}-${version}-ci.tgz`<br><br>**Note:** the `-ci` designation on the kit is intended to support a smaller package to optimize CI pipeline speed.|
+| **coverity-download-creds** | (Optional) Credentials needed to download the Coverity local analysis kit. Use the format:<br><br>`username:password`<br><br>**Note:** If setting up a POC, use the GitHub PAT assigned to your POC. This will begin with "ghp_". In this case the download URL will be ignored, and the kit will be downloaded from a private GitHub repo and release.|
+| **coverity-download-version** | (Required) Version of Coverity to download. For example:<br><br>`2022.3.1`|
+| **coverity-license-url** | Complete URL from which to download the Coverity license.dat. |
+| **coverity-license-creds** | (Optional) Credentials needed to download the Coverity local analysis kit. Use the format:<br><br>`username:password`<br><br>|
+
+
+| **Project Name** | The project name will be derived from the repository name only, e.g.<br>`[repo-name]`<br><br>Specifically, this is set to:<br>`${GITHUB_REPOSITORY##*/}` |
+
+
 ### Synthesize Stream and Project Names
 
 In order to speed deployment to new projects, the template can create stream and project names automatically based on the
