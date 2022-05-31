@@ -100,7 +100,6 @@
           fi
 
           # If creds is a GitHub token, attempt to download for a POC
-          echo Creds = ${{ inputs.coverity-download-creds }}
           if [[ "${{ inputs.coverity-download-creds }}" =~ ^ghp_ ]]; then
             unset GITHUB_TOKEN
             echo "${{ inputs.coverity-download-creds }}" | gh auth login --with-token
@@ -122,6 +121,7 @@
           COVERITY_PATH=`pwd`/../cov-analysis-${COVERITY_ARCH}-${{ inputs.coverity-download-version }}/bin
           echo "COVERITY_PATH=$COVERITY_PATH" >> $GITHUB_ENV
 
+          echo Download Coverity license from ${{ inputs.coverity-license-url }}
           if [ "${{ inputs.coverity-license-creds }}" != "" ]; then
             echo exec curl -L -u "${{ inputs.coverity-license-creds }}" ${{ inputs.coverity-license-url }}
             curl -L -u "${{ inputs.coverity-license-creds }}" ${{ inputs.coverity-license-url }} > $COVERITY_PATH/license.dat
