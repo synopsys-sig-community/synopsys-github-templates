@@ -105,8 +105,8 @@
             unset GITHUB_TOKEN
             echo "${{ inputs.coverity-download-creds }}" | gh auth login --with-token
             echo Download synopsys-github-bits release from GitHub
-            echo gh release download -D .. --repo synopsys-sig-community/synopsys-github-bits coverity-v${{ inputs.coverity-download-version }}-${COVERITY_ARCH}
-            time gh release download -D .. --repo synopsys-sig-community/synopsys-github-bits coverity-v${{ inputs.coverity-download-version }}-${COVERITY_ARCH}
+            echo gh release download -D .. --repo "${{ inputs.coverity-download-url }}" coverity-v${{ inputs.coverity-download-version }}-${COVERITY_ARCH}
+            time gh release download -D .. --repo "${{ inputs.coverity-download-url }}" coverity-v${{ inputs.coverity-download-version }}-${COVERITY_ARCH}
             (cd ..; tar --warning=no-unknown-keyword -xzf cov-analysis-${COVERITY_ARCH}-${{ inputs.coverity-download-version }}-ci.tgz)
           else
             COVERITY_BITS_URL="${{ inputs.coverity-download-url }}/cov-analysis-${COVERITY_ARCH}-${{ inputs.coverity-download-version }}.tgz"
@@ -123,6 +123,7 @@
           echo "COVERITY_PATH=$COVERITY_PATH" >> $GITHUB_ENV
 
           if [ "${{ inputs.coverity-license-creds }}" != "" ]; then
+            echo exec curl -L -u "${{ inputs.coverity-license-creds }}" ${{ inputs.coverity-license-url }}
             curl -L -u "${{ inputs.coverity-license-creds }}" ${{ inputs.coverity-license-url }} > $COVERITY_PATH/license.dat
             cat $COVERITY_PATH/license.dat
           else
