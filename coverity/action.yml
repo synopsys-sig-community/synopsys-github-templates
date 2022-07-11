@@ -125,10 +125,10 @@
           if [ "${{ inputs.coverity-license-creds }}" != "" ]; then
             echo exec curl -L -u "${{ inputs.coverity-license-creds }}" ${{ inputs.coverity-license-url }}
             curl -L -u "${{ inputs.coverity-license-creds }}" ${{ inputs.coverity-license-url }} > $COVERITY_PATH/license.dat
-            cat $COVERITY_PATH/license.dat
+            ls -l $COVERITY_PATH/license.dat
           else
             curl -L ${{ inputs.coverity-license-url }} > $COVERITY_PATH/license.dat
-            cat $COVERITY_PATH/license.dat
+            ls -l $COVERITY_PATH/license.dat
           fi
           ls -l $COVERITY_PATH/license.dat
 
