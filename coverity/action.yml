@@ -405,6 +405,7 @@
         run: |
           if [ "$COVERITY_PATH" != "" ]; then
             export PATH=$COVERITY_PATH:$PATH
+          fi
           echo
           echo ========================================================================================
           echo == Check security gate for local analysis results
