@@ -326,7 +326,7 @@
           # compared to the baseline issues in the specified project, and only NEW issues will be reported
           # in the pull request.
           coverity-url: ${{ inputs.coverity-url }}
-          coverity-project-name: ${{ github.event.repository.name }}
+          coverity-project-name: ${{ inputs.coverity-project-name }}
           coverity-username: ${{ inputs.coverity-user }}
           coverity-password: ${{ inputs.coverity-passphrase }}
 
